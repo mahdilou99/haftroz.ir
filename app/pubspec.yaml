@@ -40,6 +40,8 @@ dependencies:
   path_provider: ^2.1.6
   permission_handler: ^13.0.1
   flutter_dotenv: ^6.0.1
+  flutter_localizations:
+    sdk: flutter
 
 dependency_overrides:
   permission_handler_android: 12.0.13
