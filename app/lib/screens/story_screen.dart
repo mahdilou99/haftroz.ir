@@ -7,6 +7,8 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:html_unescape/html_unescape.dart';
 
 import '../models/story.dart';
 
@@ -22,6 +24,7 @@ class StoryScreen extends StatefulWidget {
 class _StoryScreenState extends State<StoryScreen> {
   final AudioRecorder _audioRecorder = AudioRecorder();
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final HtmlUnescape _unescape = HtmlUnescape();
 
   bool _isRecording = false;
   bool _isPlaying = false;
@@ -108,10 +111,14 @@ class _StoryScreenState extends State<StoryScreen> {
     try {
       final String apiUrl = dotenv.env['API_BASE_URL'] ?? 'https://haftroz.ir/api/upload.php';
       var uri = Uri.parse(apiUrl);
+      
+      final prefs = await SharedPreferences.getInstance();
+      final userName = prefs.getString('user_name') ?? 'کاربر ناشناس';
+      
       var request = http.MultipartRequest('POST', uri)
         ..fields['story_id'] = widget.story.id
-        ..fields['story_title'] = widget.story.title
-        ..fields['device_id'] = 'flutter_app'
+        ..fields['story_title'] = _unescape.convert(widget.story.title)
+        ..fields['device_id'] = userName
         ..files.add(await http.MultipartFile.fromPath('audio', _recordedFilePath!));
 
       var response = await request.send();
@@ -121,6 +128,10 @@ class _StoryScreenState extends State<StoryScreen> {
           final respStr = await response.stream.bytesToString();
           final jsonMap = jsonDecode(respStr);
           if (jsonMap['success'] == true) {
+            
+            // Mark as recorded
+            await prefs.setBool('recorded_${widget.story.id}', true);
+            
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('صدای شما با موفقیت به سرور هفت روز ارسال شد!'),
@@ -131,6 +142,9 @@ class _StoryScreenState extends State<StoryScreen> {
             setState(() {
               _recordedFilePath = null;
             });
+            // Go back
+            Navigator.of(context).pop();
+            
           } else {
             throw Exception(jsonMap['message'] ?? 'خطا در ثبت');
           }
@@ -160,11 +174,14 @@ class _StoryScreenState extends State<StoryScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    // Decode HTML entities so &quot; becomes "
+    final cleanTitle = _unescape.convert(widget.story.title);
+    final cleanContent = _unescape.convert(widget.story.content);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.story.title),
+        title: Text(cleanTitle),
       ),
-      // SafeArea ensures UI isn't hidden behind navigation bars or notches
       body: SafeArea(
         child: Column(
           children: [
@@ -172,7 +189,7 @@ class _StoryScreenState extends State<StoryScreen> {
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Text(
-                  widget.story.content,
+                  cleanContent,
                   style: const TextStyle(
                     fontSize: 18,
                     height: 2.0,
@@ -198,7 +215,6 @@ class _StoryScreenState extends State<StoryScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Playback controls if recording exists
                   if (_recordedFilePath != null && !_isRecording) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -215,7 +231,6 @@ class _StoryScreenState extends State<StoryScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // Record Button
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _isRecording ? colorScheme.error : colorScheme.primaryContainer,
@@ -230,7 +245,6 @@ class _StoryScreenState extends State<StoryScreen> {
                     onPressed: _isUploading ? null : (_isRecording ? _stopRecording : _startRecording),
                   ),
 
-                  // Submit Button
                   if (_recordedFilePath != null && !_isRecording) ...[
                     const SizedBox(height: 16),
                     ElevatedButton.icon(

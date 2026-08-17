@@ -1,9 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:html_unescape/html_unescape.dart';
 import '../data/dummy_data.dart';
 import 'story_screen.dart';
+import 'login_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String _userName = 'کاربر میهمان';
+  SharedPreferences? _prefs;
+  final HtmlUnescape _unescape = HtmlUnescape();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    _prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = _prefs?.getString('user_name') ?? 'کاربر میهمان';
+    });
+  }
+
+  Future<void> _logout() async {
+    if (_prefs != null) {
+      await _prefs!.clear();
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (ctx) => const LoginScreen()),
+        );
+      }
+    }
+  }
+
+  bool _isStoryRecorded(String storyId) {
+    return _prefs?.getBool('recorded_$storyId') ?? false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,10 +52,17 @@ class HomeScreen extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           SliverAppBar.large(
-            title: const Text(
-              'هفت روز',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            title: Text(
+              'سلام $_userName',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                onPressed: _logout,
+                tooltip: 'خروج از حساب',
+              ),
+            ],
             centerTitle: true,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
@@ -32,6 +79,32 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
+          
+          // Top Banner
+          SliverToBoxAdapter(
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.mic_external_on_rounded, color: Theme.of(context).colorScheme.primary, size: 32),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Text(
+                      'بی صبرانه منتظر شنیدن داستان با صدای شما هستیم!',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           SliverPadding(
             padding: const EdgeInsets.all(16.0),
             sliver: SliverList(
@@ -63,39 +136,47 @@ class HomeScreen extends StatelessWidget {
                         ),
                         childrenPadding: const EdgeInsets.only(bottom: 8),
                         children: categoryStories.map((story) {
+                          final isRecorded = _isStoryRecorded(story.id);
+                          final titleColor = isRecorded ? Colors.green : Colors.black87;
+
                           return ListTile(
                             contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 4),
+                                horizontal: 16, vertical: 8),
                             leading: Container(
-                              padding: const EdgeInsets.all(8),
+                              width: 50,
+                              height: 50,
                               decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primaryContainer,
-                                borderRadius: BorderRadius.circular(10),
+                                color: Theme.of(context).colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Icon(
-                                Icons.auto_stories_rounded,
-                                color: Theme.of(context).colorScheme.primary,
+                              child: const Center(
+                                child: Icon(Icons.image_rounded, color: Colors.grey),
                               ),
                             ),
                             title: Text(
-                              story.title,
-                              style: const TextStyle(
+                              _unescape.convert(story.title),
+                              style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w600,
+                                color: titleColor,
                               ),
                             ),
-                            trailing: const Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              size: 16,
+                            subtitle: isRecorded
+                                ? const Text('صدای شما ثبت شده است', style: TextStyle(color: Colors.green, fontSize: 12))
+                                : null,
+                            trailing: Icon(
+                              isRecorded ? Icons.check_circle_rounded : Icons.arrow_forward_ios_rounded,
+                              size: isRecorded ? 24 : 16,
+                              color: isRecorded ? Colors.green : Colors.grey,
                             ),
-                            onTap: () {
-                              Navigator.of(context).push(
+                            onTap: () async {
+                              await Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (ctx) => StoryScreen(story: story),
                                 ),
                               );
+                              // Refresh state when coming back in case they recorded it
+                              _loadUserData();
                             },
                           );
                         }).toList(),

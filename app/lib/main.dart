@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  runApp(const HaftrozApp());
+  
+  final prefs = await SharedPreferences.getInstance();
+  final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+
+  runApp(HaftrozApp(isLoggedIn: isLoggedIn));
 }
 
 class HaftrozApp extends StatelessWidget {
-  const HaftrozApp({super.key});
+  final bool isLoggedIn;
+  
+  const HaftrozApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +60,7 @@ class HaftrozApp extends StatelessWidget {
         Locale('fa', 'IR'),
       ],
       locale: const Locale('fa', 'IR'),
-      home: const HomeScreen(),
+      home: isLoggedIn ? const HomeScreen() : const LoginScreen(),
     );
   }
 }

@@ -13,6 +13,11 @@ if (!is_dir($upload_dir)) {
     mkdir($upload_dir, 0777, true);
 }
 
+// Load Telegram Config if exists
+if (file_exists(__DIR__ . '/config.php')) {
+    require_once __DIR__ . '/config.php';
+}
+
 // Ensure method is POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -61,6 +66,30 @@ try {
     $stmt = $pdo->prepare("INSERT INTO recordings (story_id, device_id, file_path) VALUES (?, ?, ?)");
     $relative_path = 'uploads/' . $new_filename;
     $stmt->execute([$story_id, $device_id, $relative_path]);
+
+    // Send to Telegram
+    if (isset($telegram_token) && isset($telegram_chat_id)) {
+        $story_title = isset($_POST['story_title']) ? $_POST['story_title'] : "بدون عنوان";
+        $telegram_url = "https://api.telegram.org/bot" . $telegram_token . "/sendAudio";
+        
+        $cfile = new CURLFile($target_path, mime_content_type($target_path), $new_filename);
+        $caption = "🎙 یک قصه جدید ضبط شد!\n\nنام داستان: " . $story_title . "\nشناسه داستان: " . $story_id;
+
+        $post_fields = [
+            'chat_id' => $telegram_chat_id,
+            'audio' => $cfile,
+            'caption' => $caption
+        ];
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $telegram_url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $post_fields);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        // Execute, but ignore errors so the API response to the app isn't blocked
+        curl_exec($ch);
+        curl_close($ch);
+    }
 
     echo json_encode([
         'success' => true,
