@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>هفت روز - هفت روز هفته قصه بگو</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <header class="header">
+        <div class="container header-content">
+            <h1 class="logo">هفت روز</h1>
+            <nav class="nav">
+                <a href="#about">درباره برنامه</a>
+                <a href="#recordings">قصه‌های شما</a>
+            </nav>
+            <a href="#download" class="btn btn-primary">دانلود اپلیکیشن</a>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container hero-content">
+                <div class="hero-text">
+                    <h2>هفت روز هفته، قصه بگو</h2>
+                    <p>برنامه‌ای برای ضبط، اشتراک‌گذاری و شنیدن داستان‌های زیبا با صدای شما. بی‌صبرانه منتظر شنیدن داستان با صدای شما هستیم!</p>
+                    <div class="hero-actions" id="download">
+                        <a href="/app-release.apk" class="btn btn-large btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            دانلود نسخه اندروید
+                        </a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <div class="mockup-placeholder">
+                        <span>📱</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="recordings" class="recordings-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2>آخرین قصه‌های ضبط شده</h2>
+                    <p>داستان‌هایی که کاربران ما اخیراً با صدای خودشان ثبت کرده‌اند.</p>
+                </div>
+                
+                <div id="recordings-grid" class="recordings-grid">
+                    <div class="loading-spinner">در حال دریافت قصه‌ها...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>تمامی حقوق برای «هفت روز» محفوظ است. © ۲۰۲۶</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchRecordings();
+        });
+
+        async function fetchRecordings() {
+            const grid = document.getElementById('recordings-grid');
+            try {
+                // Fetching from the api endpoint on the same domain
+                const response = await fetch('/api/get_recordings.php');
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    grid.innerHTML = '';
+                    data.data.forEach(rec => {
+                        const card = document.createElement('div');
+                        card.className = 'recording-card';
+                        
+                        const date = new Date(rec.created_at).toLocaleDateString('fa-IR');
+                        
+                        card.innerHTML = `
+                            <div class="card-icon">🎙️</div>
+                            <div class="card-content">
+                                <h3>داستان: ${rec.story_id}</h3>
+                                <p class="user-name">خوانش از: <strong>${rec.user_name}</strong></p>
+                                <p class="date">${date}</p>
+                                <audio controls class="audio-player">
+                                    <source src="/api/${rec.file_path}" type="audio/mp4">
+                                    مرورگر شما از پخش صدا پشتیبانی نمی‌کند.
+                                </audio>
+                            </div>
+                        `;
+                        grid.appendChild(card);
+                    });
+                } else {
+                    grid.innerHTML = '<div class="empty-state">هنوز هیچ قصه‌ای ضبط نشده است. اولین نفر باشید!</div>';
+                }
+            } catch (error) {
+                grid.innerHTML = '<div class="error-state">خطا در برقراری ارتباط با سرور.</div>';
+                console.error('Error fetching recordings:', error);
+            }
+        }
+    </script>
+</body>
+</html>
