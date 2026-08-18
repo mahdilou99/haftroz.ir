@@ -4,6 +4,7 @@ import 'package:html_unescape/html_unescape.dart';
 import '../data/dummy_data.dart';
 import 'story_screen.dart';
 import 'login_screen.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,6 +34,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _logout() async {
     if (_prefs != null) {
       await _prefs!.clear();
+      try {
+        await GoogleSignIn().signOut();
+      } catch (e) {
+        // Ignore Google sign out errors if not logged in via Google
+      }
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (ctx) => const LoginScreen()),
