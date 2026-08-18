@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:http/io_client.dart';
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -45,17 +51,96 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    // Simulate Google Sign in
-    await Future.delayed(const Duration(seconds: 1));
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_name', 'کاربر گوگل');
-    await prefs.setBool('is_logged_in', true);
-
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (ctx) => const HomeScreen()),
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
       );
+      
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      
+      if (googleUser != null) {
+        String? errorMessage;
+        int? userId;
+        
+        try {
+          final String apiUrl = dotenv.env['API_LOGIN_URL'] ?? 'https://haftroz.ir/api/login.php';
+          var response = await http.post(
+            Uri.parse(apiUrl),
+            body: {
+              'google_id': googleUser.id,
+              'email': googleUser.email,
+              'name': googleUser.displayName ?? 'کاربر گوگل',
+            },
+          );
+
+          if (response.statusCode == 200) {
+            final jsonMap = jsonDecode(response.body);
+            if (jsonMap['success'] == true) {
+              userId = jsonMap['data']['user_id'];
+            } else {
+              errorMessage = jsonMap['message'];
+            }
+          }
+        } catch (e) {
+          if (e is SocketException || e.toString().contains('Failed host lookup')) {
+            // DNS Fallback
+            final String fallbackUrl = 'https://91.107.153.4/api/login.php';
+            final httpClient = HttpClient()
+              ..badCertificateCallback = ((X509Certificate cert, String host, int port) => true);
+            final ioClient = IOClient(httpClient);
+
+            var response = await ioClient.post(
+              Uri.parse(fallbackUrl),
+              headers: {'Host': 'haftroz.ir'},
+              body: {
+                'google_id': googleUser.id,
+                'email': googleUser.email,
+                'name': googleUser.displayName ?? 'کاربر گوگل',
+              },
+            );
+            
+            if (response.statusCode == 200) {
+              final jsonMap = jsonDecode(response.body);
+              if (jsonMap['success'] == true) {
+                userId = jsonMap['data']['user_id'];
+              } else {
+                errorMessage = jsonMap['message'];
+              }
+            }
+          }
+        }
+
+        if (userId != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('user_name', googleUser.displayName ?? 'کاربر گوگل');
+          await prefs.setInt('user_id', userId);
+          await prefs.setString('user_email', googleUser.email);
+          await prefs.setBool('is_logged_in', true);
+
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (ctx) => const HomeScreen()),
+            );
+          }
+        } else {
+          throw Exception(errorMessage ?? 'خطا در ارتباط با سرور هنگام ثبت‌نام');
+        }
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطا در ورود با گوگل: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

@@ -6,6 +6,7 @@ import 'package:record/record.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:html_unescape/html_unescape.dart';
@@ -109,26 +110,71 @@ class _StoryScreenState extends State<StoryScreen> {
     });
 
     try {
-      final String apiUrl = dotenv.env['API_BASE_URL'] ?? 'https://haftroz.ir/api/upload.php';
-      var uri = Uri.parse(apiUrl);
-      
       final prefs = await SharedPreferences.getInstance();
       final userName = prefs.getString('user_name') ?? 'کاربر ناشناس';
+      final userId = prefs.getInt('user_id');
       
-      var request = http.MultipartRequest('POST', uri)
-        ..fields['story_id'] = widget.story.id
-        ..fields['story_title'] = _unescape.convert(widget.story.title)
-        ..fields['device_id'] = userName
-        ..files.add(await http.MultipartFile.fromPath('audio', _recordedFilePath!));
+      bool uploadSuccess = false;
+      String? errorMessage;
+      
+      // Attempt 1: Standard domain
+      try {
+        final String apiUrl = dotenv.env['API_BASE_URL'] ?? 'https://haftroz.ir/api/upload.php';
+        var uri = Uri.parse(apiUrl);
+        var request = http.MultipartRequest('POST', uri)
+          ..fields['story_id'] = widget.story.id
+          ..fields['story_title'] = _unescape.convert(widget.story.title)
+          ..fields['device_id'] = userName;
+          
+        if (userId != null) {
+          request.fields['user_id'] = userId.toString();
+        }
+          
+        request.files.add(await http.MultipartFile.fromPath('audio', _recordedFilePath!));
 
-      var response = await request.send();
+        var response = await request.send();
+        if (response.statusCode == 200) {
+          uploadSuccess = true;
+        } else {
+          errorMessage = 'خطای سرور: ${response.statusCode}';
+        }
+      } catch (e) {
+        debugPrint('First attempt failed: $e');
+        if (e is SocketException || e.toString().contains('SocketException') || e.toString().contains('Failed host lookup')) {
+          // Attempt 2: Direct IP Fallback (Bypass DNS cache)
+          debugPrint('Trying IP Fallback...');
+          final String fallbackUrl = 'https://91.107.153.4/api/upload.php';
+          var uri = Uri.parse(fallbackUrl);
+          var request = http.MultipartRequest('POST', uri)
+            ..headers['Host'] = 'haftroz.ir'
+            ..fields['story_id'] = widget.story.id
+            ..fields['story_title'] = _unescape.convert(widget.story.title)
+            ..fields['device_id'] = userName;
+            
+          if (userId != null) {
+            request.fields['user_id'] = userId.toString();
+          }
+          
+          request.files.add(await http.MultipartFile.fromPath('audio', _recordedFilePath!));
+
+          // Bypass SSL verification for fallback (since IP doesn't match cert)
+          final httpClient = HttpClient()
+            ..badCertificateCallback = ((X509Certificate cert, String host, int port) => true);
+          final ioClient = IOClient(httpClient);
+
+          var response = await ioClient.send(request);
+          if (response.statusCode == 200) {
+             uploadSuccess = true;
+          } else {
+             errorMessage = 'خطای سرور در تلاش دوم: ${response.statusCode}';
+          }
+        } else {
+          errorMessage = e.toString();
+        }
+      }
 
       if (mounted) {
-        if (response.statusCode == 200) {
-          final respStr = await response.stream.bytesToString();
-          final jsonMap = jsonDecode(respStr);
-          if (jsonMap['success'] == true) {
-            
+        if (uploadSuccess) {
             // Mark as recorded
             await prefs.setBool('recorded_${widget.story.id}', true);
             
@@ -138,18 +184,12 @@ class _StoryScreenState extends State<StoryScreen> {
                 backgroundColor: Colors.green,
               ),
             );
-            // Optionally clear recording after success
             setState(() {
               _recordedFilePath = null;
             });
-            // Go back
             Navigator.of(context).pop();
-            
-          } else {
-            throw Exception(jsonMap['message'] ?? 'خطا در ثبت');
-          }
         } else {
-          throw Exception('ارتباط با سرور برقرار نشد (کد: ${response.statusCode})');
+            throw Exception(errorMessage ?? 'خطای اتصال به اینترنت');
         }
       }
     } catch (e) {
@@ -158,6 +198,7 @@ class _StoryScreenState extends State<StoryScreen> {
           SnackBar(
             content: Text('خطا در ارسال: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
