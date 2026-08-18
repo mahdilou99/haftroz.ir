@@ -7,8 +7,8 @@ $logger = new AppLogger();
 // Database configuration
 $db_host = 'localhost';
 $db_name = 'haftroz_db';
-$db_user = 'root';
-$db_pass = ''; // Set your MariaDB password here
+$db_user = 'haftroz_user';
+$db_pass = 'YOUR_DB_PASSWORD';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);

@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
 require_once __DIR__ . '/logger.php';
+$logger = new AppLogger();
 
 $db_host = 'localhost';
 $db_user = 'haftroz_user'; 
