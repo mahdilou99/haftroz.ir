@@ -63,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
         int? userId;
         
         try {
-          final String apiUrl = dotenv.env['API_LOGIN_URL'] ?? 'https://haftroz.ir/backend/login.php';
+          final String apiUrl = dotenv.env['API_LOGIN_URL'] ?? 'https://haftroz.ir/api/login.php';
           var response = await http.post(
             Uri.parse(apiUrl),
             body: {
@@ -84,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
         } catch (e) {
           if (e is SocketException || e.toString().contains('Failed host lookup')) {
             // DNS Fallback
-            final String fallbackUrl = 'https://91.107.153.4/backend/login.php';
+            final String fallbackUrl = 'https://91.107.153.4/api/login.php';
             final httpClient = HttpClient()
               ..badCertificateCallback = ((X509Certificate cert, String host, int port) => true);
             final ioClient = IOClient(httpClient);

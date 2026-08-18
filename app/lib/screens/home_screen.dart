@@ -125,61 +125,65 @@ class _HomeScreenState extends State<HomeScreen> {
                       data: Theme.of(context).copyWith(
                         dividerColor: Colors.transparent,
                       ),
-                      child: ExpansionTile(
-                        iconColor: Theme.of(context).colorScheme.primary,
-                        title: Text(
-                          category.title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Text(
+                              category.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
                           ),
-                        ),
-                        childrenPadding: const EdgeInsets.only(bottom: 8),
-                        children: categoryStories.map((story) {
-                          final isRecorded = _isStoryRecorded(story.id);
-                          final titleColor = isRecorded ? Colors.green : Colors.black87;
+                          ...categoryStories.map((story) {
+                            final isRecorded = _isStoryRecorded(story.id);
+                            final titleColor = isRecorded ? Colors.green : Colors.black87;
 
-                          return ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            leading: Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Center(
-                                child: Icon(Icons.image_rounded, color: Colors.grey),
-                              ),
-                            ),
-                            title: Text(
-                              _unescape.convert(story.title),
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: titleColor,
-                              ),
-                            ),
-                            subtitle: isRecorded
-                                ? const Text('صدای شما ثبت شده است', style: TextStyle(color: Colors.green, fontSize: 12))
-                                : null,
-                            trailing: Icon(
-                              isRecorded ? Icons.check_circle_rounded : Icons.arrow_forward_ios_rounded,
-                              size: isRecorded ? 24 : 16,
-                              color: isRecorded ? Colors.green : Colors.grey,
-                            ),
-                            onTap: () async {
-                              await Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (ctx) => StoryScreen(story: story),
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              leading: Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                              );
-                              // Refresh state when coming back in case they recorded it
-                              _loadUserData();
-                            },
-                          );
-                        }).toList(),
+                                child: const Center(
+                                  child: Icon(Icons.image_rounded, color: Colors.grey),
+                                ),
+                              ),
+                              title: Text(
+                                _unescape.convert(story.title),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: titleColor,
+                                ),
+                              ),
+                              subtitle: isRecorded
+                                  ? const Text('صدای شما ثبت شده است', style: TextStyle(color: Colors.green, fontSize: 12))
+                                  : null,
+                              trailing: Icon(
+                                isRecorded ? Icons.check_circle_rounded : Icons.arrow_forward_ios_rounded,
+                                size: isRecorded ? 24 : 16,
+                                color: isRecorded ? Colors.green : Colors.grey,
+                              ),
+                              onTap: () async {
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (ctx) => StoryScreen(story: story),
+                                  ),
+                                );
+                                // Refresh state when coming back in case they recorded it
+                                _loadUserData();
+                              },
+                            );
+                          }).toList(),
+                        ],
                       ),
                     ),
                   );

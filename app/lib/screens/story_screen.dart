@@ -119,7 +119,7 @@ class _StoryScreenState extends State<StoryScreen> {
       
       // Attempt 1: Standard domain
       try {
-        final String apiUrl = dotenv.env['API_BASE_URL'] ?? 'https://haftroz.ir/backend/upload.php';
+        final String apiUrl = dotenv.env['API_BASE_URL'] ?? 'https://haftroz.ir/api/upload.php';
         var uri = Uri.parse(apiUrl);
         var request = http.MultipartRequest('POST', uri)
           ..fields['story_id'] = widget.story.id
@@ -143,7 +143,7 @@ class _StoryScreenState extends State<StoryScreen> {
         if (e is SocketException || e.toString().contains('SocketException') || e.toString().contains('Failed host lookup')) {
           // Attempt 2: Direct IP Fallback (Bypass DNS cache)
           debugPrint('Trying IP Fallback...');
-          final String fallbackUrl = 'https://91.107.153.4/backend/upload.php';
+          final String fallbackUrl = 'https://91.107.153.4/api/upload.php';
           var uri = Uri.parse(fallbackUrl);
           var request = http.MultipartRequest('POST', uri)
             ..headers['Host'] = 'haftroz.ir'
