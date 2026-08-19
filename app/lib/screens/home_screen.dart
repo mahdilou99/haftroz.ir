@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_prefs != null) {
       await _prefs!.clear();
       try {
-        await GoogleSignIn().signOut();
+        await GoogleSignIn().disconnect();
       } catch (e) {}
       if (mounted) {
         Navigator.of(context).pushReplacement(

@@ -16,30 +16,20 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _nameController = TextEditingController();
   bool _isLoading = false;
+  String? _errorMessage;
 
-  Future<void> _login() async {
-    final name = _nameController.text.trim();
-    if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('لطفاً نام خود را وارد کنید')),
-      );
-      return;
-    }
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 1));
-
+  Future<void> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_name', name);
-    await prefs.setBool('is_logged_in', true);
-
-    if (mounted) {
+    final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+    
+    if (isLoggedIn && mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (ctx) => const HomeScreen()),
       );
@@ -49,72 +39,56 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _googleLogin() async {
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
 
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn(
-        scopes: ['email', 'profile'],
-      );
-      
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      
-      if (googleUser != null) {
-        String? errorMessage;
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? user = await googleSignIn.signIn();
+
+      if (user != null) {
+        final String baseUrl = dotenv.env['API_BASE_URL'] ?? 'https://haftroz.ir/api/upload.php';
+        final String url = baseUrl.replaceAll('upload.php', 'login.php');
+
+        final httpClient = HttpClient()
+          ..badCertificateCallback = ((X509Certificate cert, String host, int port) => true);
+        final ioClient = IOClient(httpClient);
+
+        final response = await ioClient.post(
+          Uri.parse(url),
+          headers: {
+            'Host': 'haftroz.ir',
+          },
+          body: {
+            'google_id': user.id,
+            'email': user.email,
+            'name': user.displayName ?? 'کاربر گوگل',
+          },
+        );
+
         int? userId;
-        
-        try {
-          final String apiUrl = dotenv.env['API_LOGIN_URL'] ?? 'https://haftroz.ir/api/login.php';
-          var response = await http.post(
-            Uri.parse(apiUrl),
-            body: {
-              'google_id': googleUser.id,
-              'email': googleUser.email,
-              'name': googleUser.displayName ?? 'کاربر گوگل',
-            },
-          );
+        String? errorMessage;
 
-          if (response.statusCode == 200) {
-            final jsonMap = jsonDecode(response.body);
-            if (jsonMap['success'] == true) {
-              userId = jsonMap['data']['user_id'];
+        if (response.statusCode == 200) {
+          try {
+            final data = jsonDecode(response.body);
+            if (data['success'] == true) {
+              userId = data['data']['user_id'];
             } else {
-              errorMessage = jsonMap['message'];
+              errorMessage = data['message'];
             }
+          } catch (e) {
+            errorMessage = 'خطا در پردازش اطلاعات سرور: ${response.body}';
           }
-        } catch (e) {
-          if (e is SocketException || e.toString().contains('Failed host lookup')) {
-            // DNS Fallback
-            final String fallbackUrl = 'https://91.107.153.4/api/login.php';
-            final httpClient = HttpClient()
-              ..badCertificateCallback = ((X509Certificate cert, String host, int port) => true);
-            final ioClient = IOClient(httpClient);
-
-            var response = await ioClient.post(
-              Uri.parse(fallbackUrl),
-              headers: {'Host': 'haftroz.ir'},
-              body: {
-                'google_id': googleUser.id,
-                'email': googleUser.email,
-                'name': googleUser.displayName ?? 'کاربر گوگل',
-              },
-            );
-            
-            if (response.statusCode == 200) {
-              final jsonMap = jsonDecode(response.body);
-              if (jsonMap['success'] == true) {
-                userId = jsonMap['data']['user_id'];
-              } else {
-                errorMessage = jsonMap['message'];
-              }
-            }
-          }
+        } else {
+          errorMessage = 'خطای سرور: ${response.statusCode} - ${response.body}';
         }
 
         if (userId != null) {
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('user_name', googleUser.displayName ?? 'کاربر گوگل');
+          await prefs.setString('user_name', user.displayName ?? 'کاربر گوگل');
+          await prefs.setString('user_email', user.email);
           await prefs.setInt('user_id', userId);
-          await prefs.setString('user_email', googleUser.email);
           await prefs.setBool('is_logged_in', true);
 
           if (mounted) {
@@ -125,22 +99,16 @@ class _LoginScreenState extends State<LoginScreen> {
         } else {
           throw Exception(errorMessage ?? 'خطا در ارتباط با سرور هنگام ثبت‌نام');
         }
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطا در ورود با گوگل: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
+      } else {
         setState(() {
           _isLoading = false;
         });
       }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
     }
   }
 
@@ -151,15 +119,15 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(32.0),
+            padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Icon(
-                  Icons.auto_stories_rounded,
+                  Icons.menu_book_rounded,
                   size: 100,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Colors.brown[700],
                 ),
                 const SizedBox(height: 24),
                 const Text(
@@ -168,6 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
+                    fontFamily: 'Vazir',
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -177,56 +146,28 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey,
+                    fontFamily: 'Vazir',
                   ),
                 ),
                 const SizedBox(height: 48),
-                TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: 'نام شما',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
+                if (_isLoading)
+                  const Center(child: CircularProgressIndicator())
+                else
+                  OutlinedButton.icon(
+                    onPressed: _googleLogin,
+                    icon: const Icon(Icons.g_mobiledata_rounded, size: 32, color: Colors.brown),
+                    label: const Text(
+                      'ورود با حساب گوگل',
+                      style: TextStyle(fontSize: 16, color: Colors.brown, fontFamily: 'Vazir'),
                     ),
-                    prefixIcon: const Icon(Icons.person_rounded),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _login,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('ورود / ثبت‌نام'),
-                ),
-                const SizedBox(height: 24),
-                const Row(
-                  children: [
-                    Expanded(child: Divider()),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('یا', style: TextStyle(color: Colors.grey)),
-                    ),
-                    Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                OutlinedButton.icon(
-                  onPressed: _isLoading ? null : _googleLogin,
-                  icon: const Icon(Icons.g_mobiledata_rounded, size: 32),
-                  label: const Text('ورود با حساب گوگل'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: Colors.brown),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
