@@ -5,6 +5,11 @@ import '../data/dummy_data.dart';
 import 'story_screen.dart';
 import 'login_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:http/io_client.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _userName = 'کاربر میهمان';
   SharedPreferences? _prefs;
   final HtmlUnescape _unescape = HtmlUnescape();
+  Set<String> _recordedStoryIds = {};
 
   @override
   void initState() {
@@ -29,6 +35,51 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _userName = _prefs?.getString('user_name') ?? 'کاربر میهمان';
     });
+    
+    final userId = _prefs?.getInt('user_id');
+    if (userId != null) {
+      _fetchRecordedStories(userId);
+    }
+  }
+
+  Future<void> _fetchRecordedStories(int userId) async {
+    try {
+      final String baseUrl = dotenv.env['API_BASE_URL'] ?? 'https://haftroz.ir/api/upload.php';
+      final String url = baseUrl.replaceAll('upload.php', 'get_user_recordings.php?user_id=$userId');
+      
+      final httpClient = HttpClient()
+        ..badCertificateCallback = ((X509Certificate cert, String host, int port) => true);
+      final ioClient = IOClient(httpClient);
+
+      final response = await ioClient.get(Uri.parse(url), headers: {'Host': 'haftroz.ir'});
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          final List<dynamic> stories = data['recorded_stories'];
+          setState(() {
+            _recordedStoryIds = stories.map((e) => 's$e').toSet();
+          });
+        }
+      }
+    } catch (e) {
+      // Fallback
+      try {
+        final String fallbackUrl = 'https://91.107.153.4/api/get_user_recordings.php?user_id=$userId';
+        final httpClient = HttpClient()
+          ..badCertificateCallback = ((X509Certificate cert, String host, int port) => true);
+        final ioClient = IOClient(httpClient);
+        final response = await ioClient.get(Uri.parse(fallbackUrl), headers: {'Host': 'haftroz.ir'});
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          if (data['success'] == true) {
+            final List<dynamic> stories = data['recorded_stories'];
+            setState(() {
+              _recordedStoryIds = stories.map((e) => 's$e').toSet();
+            });
+          }
+        }
+      } catch (e) {}
+    }
   }
 
   Future<void> _logout() async {
@@ -36,9 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
       await _prefs!.clear();
       try {
         await GoogleSignIn().signOut();
-      } catch (e) {
-        // Ignore Google sign out errors if not logged in via Google
-      }
+      } catch (e) {}
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (ctx) => const LoginScreen()),
@@ -48,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   bool _isStoryRecorded(String storyId) {
-    return _prefs?.getBool('recorded_$storyId') ?? false;
+    return _recordedStoryIds.contains(storyId);
   }
 
   @override
