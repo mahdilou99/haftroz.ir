@@ -247,6 +247,24 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+
+          // Ad Banner Placeholder
+          SliverToBoxAdapter(
+            child: Container(
+              height: 60,
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey, width: 1),
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                'محل قرارگیری تبلیغات (بزودی)',
+                style: TextStyle(color: Colors.grey, fontFamily: 'Vazir', fontSize: 16),
+              ),
+            ),
+          ),
         ],
       ),
     );
