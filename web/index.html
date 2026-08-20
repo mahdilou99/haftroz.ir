@@ -3,104 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>هفت روز - هفت روز هفته قصه بگو</title>
-    <link rel="stylesheet" href="style.css">
+    <title>هفت روز - پلتفرم قصه‌گویی</title>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        body { font-family: "Vazirmatn", sans-serif; background-color: #121212; color: #fff; margin: 0; padding: 0; }
+        .header { background: #000; padding: 20px 0; border-bottom: 2px solid gold; text-align: center; }
+        .logo { color: gold; font-size: 2.5em; margin: 0; }
+        .nav { margin-top: 15px; }
+        .nav a { color: #fff; text-decoration: none; margin: 0 15px; font-weight: bold; }
+        .nav a:hover { color: gold; }
+        .hero { text-align: center; padding: 60px 20px; background: linear-gradient(to bottom, #111, #222); }
+        .hero h2 { color: gold; font-size: 2em; }
+        .hero p { color: #ccc; max-width: 600px; margin: 20px auto; line-height: 1.8; }
+        .btn-gold { background: linear-gradient(45deg, #FFD700, #DAA520); color: #000; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; box-shadow: 0 4px 15px rgba(218, 165, 32, 0.4); }
+        .recordings-section { padding: 40px 20px; max-width: 1000px; margin: auto; }
+        .section-header { text-align: center; margin-bottom: 30px; }
+        .section-header h2 { color: gold; }
+        .recordings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .recording-card { background: #1e1e1e; border: 1px solid #333; border-radius: 10px; padding: 20px; text-align: right; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .recording-card h3 { color: gold; margin-top: 0; }
+        .recording-card p { margin: 5px 0; color: #aaa; }
+        .audio-player { width: 100%; margin-top: 15px; }
+        .pagination { display: flex; justify-content: center; margin-top: 40px; gap: 10px; }
+        .pagination button { background: #222; color: gold; border: 1px solid gold; padding: 10px 15px; cursor: pointer; border-radius: 5px; font-family: "Vazirmatn"; font-weight: bold; }
+        .pagination button:hover { background: gold; color: #000; }
+        .pagination button:disabled { background: #333; color: #777; border-color: #555; cursor: not-allowed; }
+        .footer { text-align: center; padding: 20px; background: #000; border-top: 1px solid #333; margin-top: 40px; color: #777; }
+    </style>
 </head>
 <body>
     <header class="header">
-        <div class="container header-content">
-            <h1 class="logo">هفت روز</h1>
-            <nav class="nav">
-                <a href="#about">درباره برنامه</a>
-                <a href="#recordings">قصه‌های شما</a>
-            </nav>
-            <a href="#download" class="btn btn-primary">دانلود اپلیکیشن</a>
-        </div>
+        <h1 class="logo">هفت روز</h1>
+        <nav class="nav">
+            <a href="#recordings">آخرین قصه‌ها</a>
+            <a href="download.html">دانلود اپلیکیشن</a>
+        </nav>
     </header>
 
     <main>
         <section class="hero">
-            <div class="container hero-content">
-                <div class="hero-text">
-                    <h2>هفت روز هفته، قصه بگو</h2>
-                    <p>برنامه‌ای برای ضبط، اشتراک‌گذاری و شنیدن داستان‌های زیبا با صدای شما. بی‌صبرانه منتظر شنیدن داستان با صدای شما هستیم!</p>
-                    <div class="hero-actions" id="download">
-                        <a href="/app-release.apk" class="btn btn-large btn-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                            دانلود نسخه اندروید
-                        </a>
-                    </div>
-                </div>
-                <div class="hero-image">
-                    <div class="mockup-placeholder">
-                        <span>📱</span>
-                    </div>
-                </div>
-            </div>
+            <h2>دنیای قصه‌ها با صدای شما</h2>
+            <p>بی‌صبرانه منتظر شنیدن داستان با صدای شما هستیم! اپلیکیشن ما رو دانلود کنید و داستان خودتون رو برای ما ضبط کنید تا بقیه هم بشنوند.</p>
+            <a href="download.html" class="btn-gold">دانلود اپلیکیشن</a>
         </section>
 
         <section id="recordings" class="recordings-section">
-            <div class="container">
-                <div class="section-header">
-                    <h2>آخرین قصه‌های ضبط شده</h2>
-                    <p>داستان‌هایی که کاربران ما اخیراً با صدای خودشان ثبت کرده‌اند.</p>
-                </div>
-                
-                <div id="recordings-grid" class="recordings-grid">
-                    <div class="loading-spinner">در حال دریافت قصه‌ها...</div>
-                </div>
+            <div class="section-header">
+                <h2>قصه‌های منتخب</h2>
+                <p>بهترین صداهای ارسالی کاربران عزیز هفت روز</p>
+            </div>
+            
+            <div id="recordings-grid" class="recordings-grid">
+                <div style="color: gold; text-align: center; width: 100%;">در حال بارگذاری...</div>
+            </div>
+
+            <div class="pagination" id="pagination-controls" style="display: none;">
+                <button onclick="changePage(1)" id="btn-first">اولین</button>
+                <button onclick="changePage(currentPage - 1)" id="btn-prev">قبلی</button>
+                <span id="page-indicator" style="color: white; line-height: 40px; margin: 0 10px;"></span>
+                <button onclick="changePage(currentPage + 1)" id="btn-next">بعدی</button>
+                <button onclick="changePage(totalPages)" id="btn-last">آخرین</button>
             </div>
         </section>
     </main>
 
     <footer class="footer">
-        <div class="container">
-            <p>تمامی حقوق برای «هفت روز» محفوظ است. © ۲۰۲۶</p>
-        </div>
+        <p>تمامی حقوق برای هفت روز محفوظ است.</p>
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchRecordings();
+        let currentPage = 1;
+        let totalPages = 1;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchRecordings(currentPage);
         });
 
-        async function fetchRecordings() {
-            const grid = document.getElementById('recordings-grid');
+        async function fetchRecordings(page) {
+            const grid = document.getElementById("recordings-grid");
+            const paginator = document.getElementById("pagination-controls");
+            grid.innerHTML = "<div style='color: gold; text-align: center; width: 100%;'>در حال بارگذاری...</div>";
+            
             try {
-                // Fetching from the api endpoint on the same domain
-                const response = await fetch('/api/get_recordings.php');
+                const response = await fetch("/api/get_recordings.php?page=" + page + "&limit=15");
                 const data = await response.json();
 
-                if (data.success && data.data.length > 0) {
-                    grid.innerHTML = '';
+                if (data.success && data.data && data.data.length > 0) {
+                    grid.innerHTML = "";
                     data.data.forEach(rec => {
-                        const card = document.createElement('div');
-                        card.className = 'recording-card';
+                        const card = document.createElement("div");
+                        card.className = "recording-card";
                         
-                        const date = new Date(rec.created_at).toLocaleDateString('fa-IR');
+                        const date = new Date(rec.created_at).toLocaleDateString("fa-IR");
                         
                         card.innerHTML = `
-                            <div class="card-icon">🎙️</div>
-                            <div class="card-content">
-                                <h3>داستان: ${rec.story_id}</h3>
-                                <p class="user-name">خوانش از: <strong>${rec.user_name}</strong></p>
-                                <p class="date">${date}</p>
-                                <audio controls class="audio-player">
-                                    <source src="/api/${rec.file_path}" type="audio/mp4">
-                                    مرورگر شما از پخش صدا پشتیبانی نمی‌کند.
-                                </audio>
-                            </div>
+                            <h3>داستان شناسه: ${rec.story_id}</h3>
+                            <p>گوینده: <strong>${rec.user_name || "مهمان"}</strong></p>
+                            <p>${date}</p>
+                            <audio controls class="audio-player">
+                                <source src="/api/${rec.file_path}" type="audio/mp4">
+                                مرورگر شما از پخش صدا پشتیبانی نمی‌کند.
+                            </audio>
                         `;
                         grid.appendChild(card);
                     });
+
+                    if (data.pagination) {
+                        currentPage = data.pagination.current_page;
+                        totalPages = data.pagination.total_pages;
+                        updatePaginationControls();
+                        paginator.style.display = "flex";
+                    }
                 } else {
-                    grid.innerHTML = '<div class="empty-state">هنوز هیچ قصه‌ای ضبط نشده است. اولین نفر باشید!</div>';
+                    grid.innerHTML = "<div style='color: #aaa; text-align: center; width: 100%;'>هنوز هیچ قصه‌ای تایید نشده است.</div>";
+                    paginator.style.display = "none";
                 }
             } catch (error) {
-                grid.innerHTML = '<div class="error-state">خطا در برقراری ارتباط با سرور.</div>';
-                console.error('Error fetching recordings:', error);
+                grid.innerHTML = "<div style='color: red; text-align: center; width: 100%;'>خطا در برقراری ارتباط با سرور.</div>";
+                paginator.style.display = "none";
             }
+        }
+
+        function changePage(page) {
+            if (page >= 1 && page <= totalPages) {
+                fetchRecordings(page);
+            }
+        }
+
+        function updatePaginationControls() {
+            document.getElementById("btn-first").disabled = currentPage === 1;
+            document.getElementById("btn-prev").disabled = currentPage === 1;
+            document.getElementById("btn-next").disabled = currentPage === totalPages;
+            document.getElementById("btn-last").disabled = currentPage === totalPages;
+            
+            document.getElementById("page-indicator").innerText = `صفحه ${currentPage} از ${totalPages}`;
         }
     </script>
 </body>

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:html_unescape/html_unescape.dart';
+import 'package:share_plus/share_plus.dart';
 import '../data/dummy_data.dart';
 import 'story_screen.dart';
 import 'login_screen.dart';
@@ -19,15 +20,17 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _userName = 'کاربر میهمان';
+  final _unescape = HtmlUnescape();
   SharedPreferences? _prefs;
-  final HtmlUnescape _unescape = HtmlUnescape();
+  String _userName = '';
   Set<String> _recordedStoryIds = {};
+  String _adCode = '';
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _fetchSettings();
   }
 
   Future<void> _loadUserData() async {
@@ -40,6 +43,26 @@ class _HomeScreenState extends State<HomeScreen> {
     if (userId != null) {
       _fetchRecordedStories(userId);
     }
+  }
+
+  Future<void> _fetchSettings() async {
+    try {
+      final String baseUrl = dotenv.env['API_BASE_URL'] ?? 'https://haftroz.ir/api/upload.php';
+      final String url = baseUrl.replaceAll('upload.php', 'get_settings.php');
+      final httpClient = HttpClient()
+        ..badCertificateCallback = ((X509Certificate cert, String host, int port) => true);
+      final ioClient = IOClient(httpClient);
+
+      final response = await ioClient.get(Uri.parse(url), headers: {'Host': 'haftroz.ir'});
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['ad_code'] != null) {
+          setState(() {
+            _adCode = data['ad_code'];
+          });
+        }
+      }
+    } catch (e) {}
   }
 
   Future<void> _fetchRecordedStories(int userId) async {
@@ -248,21 +271,46 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // Ad Banner Placeholder
+          // Share & Ad Banner
           SliverToBoxAdapter(
-            child: Container(
-              height: 60,
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey, width: 1),
-              ),
-              alignment: Alignment.center,
-              child: const Text(
-                'محل قرارگیری تبلیغات (بزودی)',
-                style: TextStyle(color: Colors.grey, fontFamily: 'Vazir', fontSize: 16),
-              ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Share.share('سلام! اپلیکیشن هفت روز رو دانلود کن و داستان‌های خودت رو ضبط کن: https://haftroz.ir/download.html');
+                    },
+                    icon: const Icon(Icons.share_rounded),
+                    label: const Text('ما را با دوستانتان به اشتراک بگذارید', style: TextStyle(fontFamily: 'Vazir', fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                      foregroundColor: Colors.black,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                if (_adCode.isNotEmpty)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[400]!),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      _adCode,
+                      style: const TextStyle(color: Colors.black87, fontFamily: 'Vazir', fontSize: 16),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                if (_adCode.isEmpty)
+                  const SizedBox(height: 24),
+              ],
             ),
           ),
         ],
