@@ -8,6 +8,7 @@
     <style>
         body { font-family: "Vazirmatn", sans-serif; background-color: #121212; color: #fff; margin: 0; padding: 0; }
         .header { background: #000; padding: 20px 0; border-bottom: 2px solid gold; text-align: center; }
+        .logo-img { max-width: 80px; margin-bottom: 10px; border-radius: 20px; border: 2px solid gold; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
         .logo { color: gold; font-size: 2.5em; margin: 0; }
         .nav { margin-top: 15px; }
         .nav a { color: #fff; text-decoration: none; margin: 0 15px; font-weight: bold; }
@@ -15,7 +16,7 @@
         .hero { text-align: center; padding: 60px 20px; background: linear-gradient(to bottom, #111, #222); }
         .hero h2 { color: gold; font-size: 2em; }
         .hero p { color: #ccc; max-width: 600px; margin: 20px auto; line-height: 1.8; }
-        .btn-gold { background: linear-gradient(45deg, #FFD700, #DAA520); color: #000; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; box-shadow: 0 4px 15px rgba(218, 165, 32, 0.4); }
+        .btn-gold { background: linear-gradient(45deg, #FFD700, #DAA520); color: #000; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; box-shadow: 0 4px 15px rgba(218, 165, 32, 0.4); border: none; cursor: pointer; }
         .recordings-section { padding: 40px 20px; max-width: 1000px; margin: auto; }
         .section-header { text-align: center; margin-bottom: 30px; }
         .section-header h2 { color: gold; }
@@ -28,14 +29,21 @@
         .pagination button { background: #222; color: gold; border: 1px solid gold; padding: 10px 15px; cursor: pointer; border-radius: 5px; font-family: "Vazirmatn"; font-weight: bold; }
         .pagination button:hover { background: gold; color: #000; }
         .pagination button:disabled { background: #333; color: #777; border-color: #555; cursor: not-allowed; }
-        .footer { text-align: center; padding: 20px; background: #000; border-top: 1px solid #333; margin-top: 40px; color: #777; }
+        .contact-section { background: #0a0a0a; padding: 50px 20px; border-top: 1px solid #333; }
+        .contact-form { max-width: 500px; margin: auto; background: #1a1a1a; padding: 30px; border-radius: 15px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .form-group { margin-bottom: 15px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: #fff; border-radius: 8px; font-family: "Vazirmatn"; box-sizing: border-box; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: gold; }
+        .footer { text-align: center; padding: 20px; background: #000; border-top: 1px solid #333; color: #777; }
     </style>
 </head>
 <body>
     <header class="header">
+        <img src="icon.jpg" alt="لوگوی هفت روز" class="logo-img" onerror="this.style.display='none'">
         <h1 class="logo">هفت روز</h1>
         <nav class="nav">
             <a href="#recordings">آخرین قصه‌ها</a>
+            <a href="#contact">ارتباط با ما</a>
             <a href="download.html">دانلود اپلیکیشن</a>
         </nav>
     </header>
@@ -63,6 +71,28 @@
                 <span id="page-indicator" style="color: white; line-height: 40px; margin: 0 10px;"></span>
                 <button onclick="changePage(currentPage + 1)" id="btn-next">بعدی</button>
                 <button onclick="changePage(totalPages)" id="btn-last">آخرین</button>
+            </div>
+        </section>
+
+        <section id="contact" class="contact-section">
+            <div class="section-header">
+                <h2>ارتباط با ما</h2>
+                <p>نظرات، پیشنهادات یا مشکلات خود را برای ما بفرستید</p>
+            </div>
+            <div class="contact-form">
+                <form id="tg-form" onsubmit="sendToTelegram(event)">
+                    <div class="form-group">
+                        <input type="text" id="name" placeholder="نام شما" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="contact-info" placeholder="شماره تماس یا ایمیل" required>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="message" rows="4" placeholder="پیام شما..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn-gold" style="width:100%">ارسال پیام</button>
+                </form>
+                <p id="form-status" style="text-align:center; margin-top:15px; display:none;"></p>
             </div>
         </section>
     </main>
@@ -93,9 +123,7 @@
                     data.data.forEach(rec => {
                         const card = document.createElement("div");
                         card.className = "recording-card";
-                        
                         const date = new Date(rec.created_at).toLocaleDateString("fa-IR");
-                        
                         card.innerHTML = `
                             <h3>داستان شناسه: ${rec.story_id}</h3>
                             <p>گوینده: <strong>${rec.user_name || "مهمان"}</strong></p>
@@ -107,7 +135,6 @@
                         `;
                         grid.appendChild(card);
                     });
-
                     if (data.pagination) {
                         currentPage = data.pagination.current_page;
                         totalPages = data.pagination.total_pages;
@@ -135,8 +162,52 @@
             document.getElementById("btn-prev").disabled = currentPage === 1;
             document.getElementById("btn-next").disabled = currentPage === totalPages;
             document.getElementById("btn-last").disabled = currentPage === totalPages;
-            
             document.getElementById("page-indicator").innerText = `صفحه ${currentPage} از ${totalPages}`;
+        }
+
+        async function sendToTelegram(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const status = document.getElementById('form-status');
+            
+            const name = document.getElementById('name').value;
+            const contact = document.getElementById('contact-info').value;
+            const msg = document.getElementById('message').value;
+            
+            btn.disabled = true;
+            btn.innerText = 'در حال ارسال...';
+            
+            // Telegram Config
+            // REPLACE THESE VARIABLES ON YOUR SERVER
+            const botToken = 'YOUR_TELEGRAM_BOT_TOKEN'; // توکن بات تلگرام خود را جایگزین کنید
+            const chatId = 'YOUR_TELEGRAM_CHAT_ID'; // آیدی چت تلگرام خود را جایگزین کنید
+            
+            const text = `📬 پیام جدید از فرم تماس سایت هفت روز\n\n👤 نام: ${name}\n📞 تماس: ${contact}\n📝 پیام: ${msg}`;
+            const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+            
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ chat_id: chatId, text: text })
+                });
+                
+                if (res.ok) {
+                    status.style.display = 'block';
+                    status.style.color = 'green';
+                    status.innerText = 'پیام شما با موفقیت ارسال شد.';
+                    e.target.reset();
+                } else {
+                    throw new Error('Failed');
+                }
+            } catch(err) {
+                status.style.display = 'block';
+                status.style.color = 'red';
+                status.innerText = 'خطا در ارسال پیام. لطفا دوباره تلاش کنید.';
+            }
+            
+            btn.disabled = false;
+            btn.innerText = 'ارسال پیام';
         }
     </script>
 </body>
