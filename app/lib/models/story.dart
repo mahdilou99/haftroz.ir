@@ -10,4 +10,13 @@ class Story {
     required this.categoryId,
     required this.content,
   });
+
+  factory Story.fromJson(Map<String, dynamic> json) {
+    return Story(
+      id: json['id'].toString(),
+      title: json['title'] ?? '',
+      categoryId: json['categoryId'] ?? 'c1',
+      content: json['content'] ?? '',
+    );
+  }
 }

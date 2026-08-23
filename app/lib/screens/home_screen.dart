@@ -25,12 +25,40 @@ class _HomeScreenState extends State<HomeScreen> {
   String _userName = '';
   Set<String> _recordedStoryIds = {};
   String _adCode = '';
+  bool _isLoadingStories = true;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
     _fetchSettings();
+    _fetchStories();
+  }
+
+  Future<void> _fetchStories() async {
+    try {
+      final String baseUrl = dotenv.env['API_BASE_URL'] ?? 'https://haftroz.ir/api/upload.php';
+      final String url = baseUrl.replaceAll('upload.php', 'get_stories.php');
+      final httpClient = HttpClient()
+        ..badCertificateCallback = ((X509Certificate cert, String host, int port) => true);
+      final ioClient = IOClient(httpClient);
+
+      final response = await ioClient.get(Uri.parse(url), headers: {'Host': 'haftroz.ir'});
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          final List<dynamic> storiesJson = data['data'];
+          dummyStories.clear();
+          dummyStories.addAll(storiesJson.map((json) => Story.fromJson(json)).toList());
+        }
+      }
+    } catch (e) {
+      // Error fetching stories, will just show empty list
+    } finally {
+      setState(() {
+        _isLoadingStories = false;
+      });
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -183,9 +211,17 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          SliverPadding(
-            padding: const EdgeInsets.all(16.0),
-            sliver: SliverList(
+          if (_isLoadingStories)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(32.0),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.all(16.0),
+              sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final category = dummyCategories[index];
