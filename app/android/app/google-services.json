@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1059933970142-fl2upnhai1cgecj8v49r960pt67dej5e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ir.haftroz.app",
+            "certificate_hash": "399f438910061c6c1bd10b1e1ea614da96387761"
+          }
+        },
+        {
           "client_id": "1059933970142-jsmgbofr8pb041vv4isus0ochjuun154.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
