@@ -1,11 +1,10 @@
 <?php
 session_start();
-// REPLACE THESE DB CREDENTIALS WITH YOUR PRODUCTION ONES
-$db_host = 'localhost'; 
-$db_name = 'haftroz_db'; 
-$db_user = 'haftroz_user'; 
-$db_pass = 'YOUR_DB_PASSWORD';
-$admin_pass = 'YOUR_ADMIN_PASSWORD'; // Change this for login
+// بارگذاری تنظیمات و رمزهای عبور از فایل config
+require_once 'config.php';
+
+// مقادیر $db_host, $db_name, $db_user, $db_pass, $admin_pass 
+// باید داخل فایل config.php روی سرور تعریف شده باشند.
 
 if (isset($_POST['login'])) {
     if ($_POST['password'] === $admin_pass) {
