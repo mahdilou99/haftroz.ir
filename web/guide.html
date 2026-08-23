@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>راهنمای ارسال صدا - هفت روز</title>
+    <!-- بارگذاری فونت زیبای وزیرمتن -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    
+    <style>
+        :root {
+            --bg-dark: #0f0f13;
+            --surface: #1a1a20;
+            --primary: #f3c623;
+            --primary-hover: #e0b318;
+            --text-main: #f5f5f5;
+            --text-muted: #9fa0a7;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+        
+        /* نوار ناوبری (منو) */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 5%;
+            background-color: rgba(26, 26, 32, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-brand { font-size: 24px; font-weight: 800; color: var(--primary); text-decoration: none; letter-spacing: -0.5px; }
+        
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-right: 30px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
+        }
+        .nav-links a:hover { color: var(--primary); }
+        
+        /* بخش راهنما */
+        .section { padding: 90px 5%; max-width: 1200px; margin: 0 auto; min-height: 70vh; }
+        .section-title { text-align: center; margin-bottom: 60px; }
+        .section-title h2 { font-size: 2.2rem; font-weight: 800; margin-bottom: 10px; }
+        .section-title p { color: var(--text-muted); font-size: 1.05rem; }
+        
+        .guide-content { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: var(--surface); 
+            padding: 50px; 
+            border-radius: 24px; 
+            border: 1px solid rgba(255,255,255,0.04); 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3); 
+        }
+        .guide-content h2 { color: var(--primary); margin-top: 35px; margin-bottom: 15px; font-size: 1.5rem; }
+        .guide-content ul { list-style-position: inside; margin-bottom: 25px; padding-right: 15px; }
+        .guide-content li { margin-bottom: 12px; color: var(--text-muted); font-size: 1.05rem; }
+        .guide-content p { color: var(--text-muted); margin-bottom: 20px; font-size: 1.05rem; }
+        
+        /* فوتر */
+        .footer { text-align: center; padding: 35px; border-top: 1px solid rgba(255,255,255,0.05); background: #0b0b0e; color: var(--text-muted); font-size: 0.95rem; margin-top: 50px; }
+        
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .guide-content { padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- هدر سایت -->
+    <header class="navbar">
+        <a href="index.html" class="nav-brand">هفت روز</a>
+        <nav class="nav-links">
+            <a href="index.html#recordings">قصه‌های کاربران</a>
+            <a href="guide.html" style="color: var(--primary);">راهنمای ارسال صدا</a>
+            <a href="index.html#contact">ارتباط با ما</a>
+            <a href="haftroz_v4.apk" style="color: var(--primary);">دانلود اپلیکیشن</a>
+        </nav>
+    </header>
+
+    <main class="section">
+        <div class="section-title">
+            <h2>راهنمای ضبط و ارسال قصه</h2>
+            <p>قوانین و استانداردهای پلتفرم هفت روز برای تایید صدای شما</p>
+        </div>
+        
+        <div class="guide-content">
+            <p style="color: #fff; font-weight: 500; font-size: 1.1rem; line-height: 1.8;">کاربر گرامی، برای اینکه قصه‌های شما با بالاترین کیفیت به دست کودکان سرزمینمان برسد و در سایت تایید شود، رعایت نکات زیر الزامی است. فایل‌هایی که این شرایط را نداشته باشند متاسفانه توسط مدیریت رد خواهند شد.</p>
+            
+            <h2>۱. محیط ضبط (آرامش کامل)</h2>
+            <ul>
+                <li>حتماً در یک محیط کاملاً آرام و بی‌سروصدا قصه را ضبط کنید.</li>
+                <li>درها و پنجره‌ها را ببندید تا صدای خیابان، ماشین یا محیط بیرون به گوش نرسد.</li>
+                <li>وسایل صدادار مثل کولر، پنکه، تلویزیون یا موسیقی پس‌زمینه را هنگام ضبط خاموش کنید.</li>
+            </ul>
+
+            <h2>۲. کیفیت و لحن بیان</h2>
+            <ul>
+                <li>سعی کنید قصه را با لحنی جذاب، کودکانه و دارای حس و حال بخوانید تا کودکان از شنیدن آن لذت ببرند.</li>
+                <li>تپق زدن و اشتباهات کلامی زیاد باعث رد شدن فایل می‌شود. لطفاً قبل از ضبط، حداقل یک بار از روی متن روخوانی و تمرین کنید.</li>
+                <li>فاصله مناسب از میکروفون گوشی را حفظ کنید تا صدای شما نه خیلی ضعیف و دور باشد، و نه به دلیل نزدیکی زیاد، خش‌دار و آزاردهنده شود.</li>
+            </ul>
+
+            <h2>۳. بررسی نهایی پیش از ارسال</h2>
+            <ul>
+                <li>اگر در حین ضبط اشتباه کردید یا صدای اضافه‌ای (مثل صدای سرفه یا زنگ گوشی) در محیط ایجاد شد، آن فایل را پاک کنید و <strong>مجدداً از ابتدا ضبط کنید</strong>.</li>
+                <li>حتماً قبل از زدن دکمه ارسال، یک بار به صورت کامل به فایل ضبط شده‌ی خود گوش دهید.</li>
+                <li>فقط و فقط فایل‌های نهایی، روان و بی‌نقص را برای سایت ارسال کنید.</li>
+            </ul>
+            
+            <p style="margin-top:40px; color: var(--primary); font-weight:bold; text-align:center; font-size: 1.2rem;">
+                زمان و گوش‌های مخاطبان کوچک ما برای ما بسیار ارزشمند است.<br>از اینکه با دقت و عشق خود به کیفیت سایت کمک می‌کنید بی‌نهایت سپاسگزاریم! 💛
+            </p>
+        </div>
+    </main>
+
+    <!-- فوتر -->
+    <footer class="footer">
+        <p>تمامی حقوق مادی و معنوی برای اپلیکیشن <strong>هفت روز</strong> محفوظ است. &copy; ۱۴۰۳</p>
+    </footer>
+</body>
+</html>

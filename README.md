@@ -1,54 +1,29 @@
-# هفت روز (Haftroz) 📚🎙️
+# اپلیکیشن و وب‌سایت هفت روز (Haftroz)
 
-**هفت روز هفته، قصه بگو**  
-*Tell stories seven days a week*
+این پروژه شامل یک اپلیکیشن اندروید برای ضبط قصه‌های کودکانه و یک پلتفرم تحت وب برای مدیریت و اشتراک‌گذاری آن‌ها است.
 
-🌐 **Website:** [haftroz.ir](https://haftroz.ir)
+## ساختار سرور و فایل‌های پروژه
 
-پروژه «هفت روز» یک پلتفرم جمع‌آوری و شنیدن داستان‌های جذاب ایرانی است. این اپلیکیشن با طراحی مدرن و کاربرپسند به کاربران اجازه می‌دهد داستان‌های مختلف را بخوانند، صدای خود را هنگام خواندن داستان ضبط کنند و آن را به سرور اختصاصی ارسال نمایند تا پس از تایید مدیریت، در دسترس دیگران قرار گیرد.
+بر اساس معماری وب‌سرور (Nginx)، پروژه به دو بخش کاملاً مجزا تقسیم شده است:
 
-Haftroz is a platform for collecting and listening to engaging Iranian stories. With a modern and user-friendly design, this app allows users to read stories, record their voice while reading, and send it to a dedicated server. Approved stories will be made available for everyone.
+### ۱. بخش کاربری سایت (Frontend) - داخل پوشه `web/`
+این پوشه شامل فایل‌های ظاهری است که کاربران هنگام ورود به سایت می‌بینند:
+- **`index.html`**: صفحه اصلی سایت. شامل معرفی، لیست جدیدترین قصه‌های کاربران، لینک دانلود اپلیکیشن، و فرم ارتباط با پشتیبانی (طراحی شده با فونت وزیرمتن و تم تاریک/طلایی).
+- **`download.html`**: صفحه فرود (Landing Page) مجزا برای دانلود مستقیم اپلیکیشن.
+- **`haftroz_v4.apk`**: فایل نصب اصلی اپلیکیشن اندروید.
+- **`icon.jpg`**: لوگوی استفاده شده در سایت.
 
----
+### ۲. بخش برنامه‌نویسی و سرور (Backend) - داخل پوشه `backend/`
+وب‌سرور طوری تنظیم شده است که تمامی درخواست‌های ارسالی به مسیر `haftroz.ir/api/` را از این پوشه می‌خواند. این پوشه قلب تپنده سایت و اپلیکیشن است:
+- **`admin.php`**: پنل مدیریت تحت وب. دارای قابلیت لاگین امن، پخش قصه‌ها، تایید (Approve) برای نمایش در سایت، رد کردن، و حذف فایل‌ها، به همراه مدیریت بنرهای تبلیغاتی.
+- **`send_telegram.php`**: فایل امن برای دریافت اطلاعات فرم تماس از `index.html` و ارسال آن به ربات تلگرام مدیر (بدون لو رفتن توکن).
+- **`get_recordings.php`**: این فایل قصه‌های تاییدشده را از دیتابیس می‌خواند و به صورت JSON به سایت می‌فرستد تا در صفحه اصلی نمایش داده شوند.
+- **`upload.php`**: وظیفه دریافت فایل‌های صوتی (m4a) که کاربران از طریق موبایل ضبط کرده‌اند را دارد و آن‌ها را در پوشه `uploads/` ذخیره می‌کند.
+- **`login.php`**: مدیریت اتصال اپلیکیشن موبایل به سرور از طریق ورود با اکانت گوگل.
+- **`config.php`**: اطلاعات حساس و رمز عبور اتصال به دیتابیس MySQL.
+- **`schema.sql`**: ساختار و جدول‌های دیتابیس (جداول کاربران، قصه‌ها و تنظیمات).
+- **`uploads/`**: پوشه‌ای که تمامی ویس‌های ارسالی داخل آن ذخیره می‌شوند.
 
-## 🏗️ ساختار پروژه | Project Structure
-
-این مخزن (Repository) شامل دو بخش اصلی است:
-This repository contains two main parts:
-
-1. **`app/`**: سورس کد اپلیکیشن موبایل فلاتر (Flutter Mobile App)
-2. **`backend/`**: کدهای سمت سرور شامل اسکریپت‌های PHP و ساختار دیتابیس MariaDB
-
----
-
-## 🚀 تکنولوژی‌ها | Technologies
-
-- **Frontend:** Flutter (Dart), Material 3 Design
-- **Backend:** PHP, Nginx
-- **Database:** MariaDB (MySQL)
-- **Typography:** Vazirmatn Font (فونت زیبای وزیرمتن)
-
----
-
-## ⚙️ نصب و راه‌اندازی | Installation & Setup
-
-### سمت سرور (Backend)
-جهت نصب و راه‌اندازی سمت سرور، کدهای پوشه‌ی `backend/` را در روت سرور Nginx خود (مثلاً `/var/www/haftroz.ir/api/`) قرار دهید. سپس دیتابیس خود را بر اساس فایل `schema.sql` تنظیم کنید و رمز دیتابیس را در فایل `upload.php` وارد نمایید.
-
-To set up the backend, place the contents of the `backend/` folder in your Nginx server root (e.g., `/var/www/haftroz.ir/api/`). Configure your database using `schema.sql` and update the database credentials in `upload.php`.
-
-### سمت اپلیکیشن (Mobile App)
-جهت تغییر آدرس سرور می‌توانید فایل `.env` را در پوشه `app/` ایجاد کرده و مقدار زیر را تنظیم کنید:
-
-To change the server address, create a `.env` file in the `app/` folder and set the following value:
-```env
-API_BASE_URL=https://haftroz.ir/api/upload.php
-```
-سپس پروژه را با دستور زیر بیلد بگیرید:
-Then build the project:
-```bash
-flutter build apk --release
-```
-
----
-*توسعه داده شده با ❤️ برای فرهنگ قصه‌گویی ایران*
+## نکات امنیتی
+- برای امنیت بیشتر در محیط گیت‌هاب، رمزهای عبور دیتابیس و توکن ربات تلگرام در کدهای این مخزن پاک شده و با مقادیر پیش‌فرض (`YOUR_TELEGRAM_BOT_TOKEN` و `YOUR_DB_PASSWORD`) جایگزین شده‌اند. 
+- در سرور واقعی، این متغیرها دارای مقادیر اصلی هستند.

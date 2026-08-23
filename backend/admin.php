@@ -40,16 +40,62 @@ try {
         $stmt->execute([$ad_code, $ad_code]);
         $msg = "تبلیغات ذخیره شد.";
     }
+    
+    // تابع کمکی برای ارسال ایمیل
+    function sendUserEmail($email, $name, $status) {
+        if (empty($email)) return;
+        $name = $name ?: 'کاربر';
+        $subject = ($status === 'approved') ? "تایید قصه شما در سایت هفت روز" : "رد قصه شما در سایت هفت روز";
+        
+        if ($status === 'approved') {
+            $message = "سلام $name عزیز،\n\nتبریک! فایل صوتی شما توسط ادمین تایید شد و هم‌اکنون در سایت هفت روز قرار گرفت.\nاز مشارکت شما در دنیای قصه‌ها سپاسگزاریم.\n\nتیم پشتیبانی هفت روز";
+        } else {
+            $message = "سلام $name عزیز،\n\nفایل صوتی ارسالی شما با توجه به شاخصه‌های اصلی سایت مورد تایید مدیریت قرار نگرفت و متاسفانه رد شد.\nلطفاً بخش راهنمای ارسال صدا را با دقت بخوانید و با توجه به راهنمای سایت اقدام به ارسال صدای خود کنید.\n\nتیم پشتیبانی هفت روز";
+        }
+        
+        $headers = "From: noreply@haftroz.ir\r\nContent-Type: text/plain; charset=utf-8";
+        @mail($email, $subject, $message, $headers);
+    }
+
     // عملیات حذف
     if (isset($_GET['del_rec'])) {
-        $stmt = $pdo->prepare("DELETE FROM recordings WHERE id = ?"); $stmt->execute([$_GET['del_rec']]);
+        $id = (int)$_GET['del_rec'];
+        // گرفتن آدرس فایل فیزیکی و ایمیل کاربر قبل از حذف دیتابیس
+        $stmt = $pdo->prepare("SELECT r.file_path, u.name, u.email FROM recordings r LEFT JOIN users u ON r.user_id = u.id WHERE r.id = ?");
+        $stmt->execute([$id]);
+        $info = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($info) {
+            // حذف فایل فیزیکی ویس
+            $filePath = __DIR__ . '/' . ltrim($info['file_path'], '/');
+            if (file_exists($filePath) && is_file($filePath)) {
+                @unlink($filePath);
+            }
+            // ارسال ایمیل رد شدن
+            sendUserEmail($info['email'], $info['name'], 'rejected');
+        }
+
+        $stmt = $pdo->prepare("DELETE FROM recordings WHERE id = ?"); $stmt->execute([$id]);
         header("Location: admin.php"); exit;
     }
+    
     // عملیات تایید
     if (isset($_GET['approve_rec'])) {
-        $stmt = $pdo->prepare("UPDATE recordings SET is_approved = 1 WHERE id = ?"); $stmt->execute([$_GET['approve_rec']]);
+        $id = (int)$_GET['approve_rec'];
+        $stmt = $pdo->prepare("SELECT u.name, u.email FROM recordings r LEFT JOIN users u ON r.user_id = u.id WHERE r.id = ?");
+        $stmt->execute([$id]);
+        $info = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $stmt = $pdo->prepare("UPDATE recordings SET is_approved = 1 WHERE id = ?"); $stmt->execute([$id]);
+        
+        if ($info) {
+            // ارسال ایمیل تایید شدن
+            sendUserEmail($info['email'], $info['name'], 'approved');
+        }
+        
         header("Location: admin.php"); exit;
     }
+    
     // عملیات لغو تایید
     if (isset($_GET['reject_rec'])) {
         $stmt = $pdo->prepare("UPDATE recordings SET is_approved = 0 WHERE id = ?"); $stmt->execute([$_GET['reject_rec']]);
@@ -96,7 +142,7 @@ try {
                     <a href="?approve_rec=<?php echo $r['id']; ?>" class="btn btn-green">تایید</a>
                 <?php endif; ?>
                 
-                <a href="?del_rec=<?php echo $r['id']; ?>" class="btn btn-red">حذف</a>
+                <a href="?del_rec=<?php echo $r['id']; ?>" class="btn btn-red">حذف (همراه با فایل)</a>
             </td>
         </tr>
         <?php endforeach; ?>
