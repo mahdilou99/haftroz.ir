@@ -4,11 +4,7 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/logger.php';
 $logger = new AppLogger();
 
-// Database configuration
-$db_host = 'localhost';
-$db_name = 'haftroz_db';
-$db_user = 'haftroz_user';
-$db_pass = 'YOUR_DB_PASSWORD';
+require_once __DIR__ . '/config.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);

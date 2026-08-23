@@ -3,13 +3,9 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/logger.php';
 $logger = new AppLogger();
 
-$db_host = 'localhost';
-$db_user = 'haftroz_user'; 
-$db_pass = 'YOUR_DB_PASSWORD'; 
-$db_name = 'haftroz_db';
-
-$botToken = "YOUR_TELEGRAM_BOT_TOKEN"; 
-$chatId = "YOUR_TELEGRAM_CHAT_ID"; 
+require_once __DIR__ . '/config.php';
+$botToken = $telegram_bot_token;
+$chatId = $telegram_chat_id; 
 
 $logger->info("Upload request started", ['post_data' => $_POST, 'files' => $_FILES]);
 
