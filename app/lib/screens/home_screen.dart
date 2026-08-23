@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:share_plus/share_plus.dart';
 import '../data/dummy_data.dart';
+import '../models/story.dart';
 import 'story_screen.dart';
 import 'login_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -49,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (data['success'] == true && data['data'] != null) {
           final List<dynamic> storiesJson = data['data'];
           dummyStories.clear();
-          dummyStories.addAll(storiesJson.map((json) => Story.fromJson(json)).toList());
+          dummyStories.addAll(storiesJson.map<Story>((json) => Story.fromJson(json)).toList());
         }
       }
     } catch (e) {
