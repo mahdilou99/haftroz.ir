@@ -267,9 +267,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: Theme.of(context).colorScheme.primaryContainer,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Center(
-                                  child: Icon(Icons.image_rounded, color: Colors.grey),
-                                ),
+                                clipBehavior: Clip.hardEdge,
+                                child: story.imageUrl != null && story.imageUrl!.isNotEmpty
+                                    ? Image.network(
+                                        'https://haftroz.ir/api/${story.imageUrl}',
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            const Center(child: Icon(Icons.image_rounded, color: Colors.grey)),
+                                      )
+                                    : const Center(
+                                        child: Icon(Icons.image_rounded, color: Colors.grey),
+                                      ),
                               ),
                               title: Text(
                                 _unescape.convert(story.title),

@@ -18,7 +18,7 @@ if (!isset($_SESSION['admin_logged_in'])) {
 <html lang="fa" dir="rtl"><head><meta charset="UTF-8"><title>ورود مدیریت</title></head>
 <body style="font-family:Tahoma; text-align:center; margin-top:100px; background:#121212; color:white;">
     <h2 style="color:gold;">ورود به پنل مدیریت هفت روز</h2>
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
         <input type="password" name="password" placeholder="رمز عبور" required style="padding:10px; width:200px; background:#222; border:1px solid gold; color:white;"><br><br>
         <button type="submit" name="login" style="padding:10px 20px; background:gold; color:black; border:none; cursor:pointer; font-weight:bold;">ورود</button>
     </form>
@@ -90,6 +90,7 @@ try {
     }
 
     // ======================================
+    try { $pdo->exec("ALTER TABLE stories ADD COLUMN image_url VARCHAR(255) NULL"); } catch(Exception $e) {}
     // 2. عملیات مربوط به داستان‌ها (متن)
     // ======================================
     
@@ -97,8 +98,16 @@ try {
         $title = $_POST['title'];
         $content = $_POST['content_text'];
         $order = (int)$_POST['order_index'];
-        $stmt = $pdo->prepare("INSERT INTO stories (category_name, title, content_text, order_index) VALUES ('c1', ?, ?, ?)");
-        $stmt->execute([$title, $content, $order]);
+        $image_url = null;
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+            $imgName = time() . '_' . rand(100, 999) . '.' . $ext;
+            $dest = __DIR__ . '/uploads/stories/' . $imgName;
+            if (!is_dir(__DIR__ . '/uploads/stories')) mkdir(__DIR__ . '/uploads/stories', 0775, true);
+            if (move_uploaded_file($_FILES['image']['tmp_name'], $dest)) $image_url = 'uploads/stories/' . $imgName;
+        }
+        $stmt = $pdo->prepare("INSERT INTO stories (category_name, title, content_text, order_index, image_url) VALUES ('c1', ?, ?, ?, ?)");
+        $stmt->execute([$title, $content, $order, $image_url]);
         header("Location: admin.php?tab=stories&msg=added"); exit;
     }
 
@@ -107,8 +116,21 @@ try {
         $title = $_POST['title'];
         $content = $_POST['content_text'];
         $order = (int)$_POST['order_index'];
-        $stmt = $pdo->prepare("UPDATE stories SET title = ?, content_text = ?, order_index = ? WHERE id = ?");
-        $stmt->execute([$title, $content, $order, $id]);
+        $image_url = null;
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+            $imgName = time() . '_' . rand(100, 999) . '.' . $ext;
+            $dest = __DIR__ . '/uploads/stories/' . $imgName;
+            if (!is_dir(__DIR__ . '/uploads/stories')) mkdir(__DIR__ . '/uploads/stories', 0775, true);
+            if (move_uploaded_file($_FILES['image']['tmp_name'], $dest)) $image_url = 'uploads/stories/' . $imgName;
+        }
+        if ($image_url) {
+            $stmt = $pdo->prepare("UPDATE stories SET title = ?, content_text = ?, order_index = ?, image_url = ? WHERE id = ?");
+            $stmt->execute([$title, $content, $order, $image_url, $id]);
+        } else {
+            $stmt = $pdo->prepare("UPDATE stories SET title = ?, content_text = ?, order_index = ? WHERE id = ?");
+            $stmt->execute([$title, $content, $order, $id]);
+        }
         header("Location: admin.php?tab=stories&msg=edited"); exit;
     }
 
@@ -258,35 +280,16 @@ $activeTab = $_GET['tab'] ?? 'recordings';
     <div id="addStoryModal" class="modal">
         <div class="modal-content">
             <h2 style="color:gold; margin-top:0;">افزودن داستان جدید</h2>
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 <label>عنوان داستان</label>
                 <input type="text" name="title" required>
                 
-                <label>ترتیب نمایش (مثلا 1 برای نمایش در ابتدا)</label>
-                <input type="number" name="order_index" value="10" required>
-                
-                <label>متن داستان</label>
-                <textarea name="content_text" rows="12" required></textarea>
-                
-                <div style="margin-top:20px; text-align:left;">
-                    <button type="button" class="btn btn-red" onclick="closeModal('addStoryModal')">انصراف</button>
-                    <button type="submit" name="add_story" class="btn btn-green">ذخیره داستان</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- مودال ویرایش داستان -->
-    <div id="editStoryModal" class="modal">
-        <div class="modal-content">
-            <h2 style="color:gold; margin-top:0;">ویرایش داستان</h2>
-            <form method="POST">
-                <input type="hidden" name="story_id" id="edit_id">
-                <label>عنوان داستان</label>
-                <input type="text" name="title" id="edit_title" required>
-                
                 <label>ترتیب نمایش</label>
                 <input type="number" name="order_index" id="edit_order" required>
+                
+                <label>عکس داستان (اختیاری - اگر عکس جدیدی انتخاب کنید جایگزین قبلی می‌شود)</label>
+                <input type="file" name="image" accept="image/*">
+                
                 
                 <label>متن داستان</label>
                 <textarea name="content_text" id="edit_content" rows="12" required></textarea>

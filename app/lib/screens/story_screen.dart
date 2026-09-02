@@ -229,14 +229,30 @@ class _StoryScreenState extends State<StoryScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
-                child: Text(
-                  cleanContent,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    height: 2.0,
-                    color: Colors.black87,
-                  ),
-                  textAlign: TextAlign.justify,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (widget.story.imageUrl != null && widget.story.imageUrl!.isNotEmpty) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.network(
+                          'https://haftroz.ir/api/${widget.story.imageUrl}',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    Text(
+                      cleanContent,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        height: 2.0,
+                        color: Colors.black87,
+                      ),
+                      textAlign: TextAlign.justify,
+                    ),
+                  ],
                 ),
               ),
             ),
