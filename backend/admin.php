@@ -285,11 +285,36 @@ $activeTab = $_GET['tab'] ?? 'recordings';
                 <input type="text" name="title" required>
                 
                 <label>ترتیب نمایش</label>
+                <input type="number" name="order_index" value="10" required>
+                
+                <label>عکس داستان (اختیاری)</label>
+                <input type="file" name="image" accept="image/*">
+                
+                <label>متن داستان</label>
+                <textarea name="content_text" rows="12" required></textarea>
+                
+                <div style="margin-top:20px; text-align:left;">
+                    <button type="button" class="btn btn-red" onclick="closeModal('addStoryModal')">انصراف</button>
+                    <button type="submit" name="add_story" class="btn btn-green">ثبت داستان</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- مودال ویرایش داستان -->
+    <div id="editStoryModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color:gold; margin-top:0;">ویرایش داستان</h2>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="story_id" id="edit_id">
+                <label>عنوان داستان</label>
+                <input type="text" name="title" id="edit_title" required>
+                
+                <label>ترتیب نمایش</label>
                 <input type="number" name="order_index" id="edit_order" required>
                 
                 <label>عکس داستان (اختیاری - اگر عکس جدیدی انتخاب کنید جایگزین قبلی می‌شود)</label>
                 <input type="file" name="image" accept="image/*">
-                
                 
                 <label>متن داستان</label>
                 <textarea name="content_text" id="edit_content" rows="12" required></textarea>
