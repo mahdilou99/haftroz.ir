@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>درخواست حذف حساب کاربری | اپلیکیشن هفت روز</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.8;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 650px;
+            margin: 50px auto;
+            background: #fff;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+        h1 {
+            color: #d32f2f;
+            border-bottom: 2px solid #ffcdd2;
+            padding-bottom: 12px;
+            font-size: 24px;
+        }
+        p {
+            font-size: 15px;
+            color: #555;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #444;
+        }
+        input[type="email"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-family: inherit;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        button {
+            background-color: #d32f2f;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #b71c1c;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-right: 4px solid #1976d2;
+            padding: 14px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>درخواست حذف حساب کاربری و داده‌ها</h1>
+        <p>کاربر گرامی اپلیکیشن «هفت روز»، مطابق با خط‌مشی‌های صیانت از داده و حریم خصوصی گوگل‌پلی، شما این امکان را دارید که در هر زمان درخواست حذف کامل حساب کاربری و سوابق خود را ثبت نمایید.</p>
+
+        <div class="info-box">
+            <strong>پس از تایید حذف:</strong>
+            <ul>
+                <li>اطلاعات حساب شما (نام، آدرس ایمیل و شناسه کاربری) به صورت برگشت‌ناپذیر پاک خواهد شد.</li>
+                <li>فایل‌های صوتی ضبط‌شده که ارسال کرده بودید از سرورهای ما به طور کامل حذف می‌گردند.</li>
+            </ul>
+        </div>
+
+        <form action="mailto:support@haftroz.ir?subject=درخواست حذف حساب کاربری هفت روز" method="post" enctype="text/plain">
+            <div class="form-group">
+                <label for="email">آدرس ایمیل متصل به حساب گوگل شما در برنامه:</label>
+                <input type="email" id="email" name="email" required placeholder="example@gmail.com">
+            </div>
+
+            <div class="form-group">
+                <label for="reason">توضیحات اختیاری (اختیاری):</label>
+                <textarea id="reason" name="reason" rows="3" placeholder="در صورت تمایل دلیل حذف حساب را بنویسید..."></textarea>
+            </div>
+
+            <button type="submit">ثبت درخواست حذف اطلاعات</button>
+        </form>
+
+        <p style="font-size: 12px; color: #888; margin-top: 25px; text-align: center;">
+            درخواست‌های حذف حداکثر ظرف مدت ۴۸ ساعت کاری پردازش و اجرا می‌شوند.<br>
+            همچنین می‌توانید مستقیماً به آدرس <strong>support@haftroz.ir</strong> ایمیل ارسال نمایید.
+        </p>
+    </div>
+</body>
+</html>
