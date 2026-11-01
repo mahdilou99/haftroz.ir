@@ -1,4 +1,4 @@
-package ir.haftroz.app
+package ir.haftroz
 
 import io.flutter.embedding.android.FlutterActivity
 
