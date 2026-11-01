@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../data/dummy_data.dart';
 import '../models/story.dart';
+import '../services/analytics_service.dart';
 import 'story_screen.dart';
 import 'login_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -25,7 +26,14 @@ class _HomeScreenState extends State<HomeScreen> {
   SharedPreferences? _prefs;
   String _userName = '';
   Set<String> _recordedStoryIds = {};
+  
+  // Ad settings
   String _adCode = '';
+  String _adTitle = '';
+  String _adBannerImage = '';
+  String _adTargetUrl = '';
+  bool _adActive = false;
+
   bool _isLoadingStories = true;
 
   @override
@@ -56,17 +64,21 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       // Error fetching stories, will just show empty list
     } finally {
-      setState(() {
-        _isLoadingStories = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingStories = false;
+        });
+      }
     }
   }
 
   Future<void> _loadUserData() async {
     _prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _userName = _prefs?.getString('user_name') ?? 'کاربر میهمان';
-    });
+    if (mounted) {
+      setState(() {
+        _userName = _prefs?.getString('user_name') ?? 'کاربر میهمان';
+      });
+    }
     
     final userId = _prefs?.getInt('user_id');
     if (userId != null) {
@@ -85,9 +97,13 @@ class _HomeScreenState extends State<HomeScreen> {
       final response = await ioClient.get(Uri.parse(url), headers: {'Host': 'haftroz.ir'});
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true && data['ad_code'] != null) {
+        if (data['success'] == true && mounted) {
           setState(() {
-            _adCode = data['ad_code'];
+            _adCode = data['ad_code'] ?? '';
+            _adTitle = data['ad_title'] ?? '';
+            _adBannerImage = data['ad_banner_image'] ?? '';
+            _adTargetUrl = data['ad_target_url'] ?? '';
+            _adActive = data['ad_active'] == true;
           });
         }
       }
@@ -106,32 +122,14 @@ class _HomeScreenState extends State<HomeScreen> {
       final response = await ioClient.get(Uri.parse(url), headers: {'Host': 'haftroz.ir'});
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['success'] == true) {
+        if (data['success'] == true && mounted) {
           final List<dynamic> stories = data['recorded_stories'];
           setState(() {
             _recordedStoryIds = stories.map((e) => 's$e').toSet();
           });
         }
       }
-    } catch (e) {
-      // Fallback
-      try {
-        final String fallbackUrl = 'https://91.107.153.4/api/get_user_recordings.php?user_id=$userId';
-        final httpClient = HttpClient()
-          ..badCertificateCallback = ((X509Certificate cert, String host, int port) => true);
-        final ioClient = IOClient(httpClient);
-        final response = await ioClient.get(Uri.parse(fallbackUrl), headers: {'Host': 'haftroz.ir'});
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          if (data['success'] == true) {
-            final List<dynamic> stories = data['recorded_stories'];
-            setState(() {
-              _recordedStoryIds = stories.map((e) => 's$e').toSet();
-            });
-          }
-        }
-      } catch (e) {}
-    }
+    } catch (e) {}
   }
 
   Future<void> _logout() async {
@@ -150,6 +148,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isStoryRecorded(String storyId) {
     return _recordedStoryIds.contains(storyId);
+  }
+
+  Future<void> _handleAdClick() async {
+    if (_adTargetUrl.isNotEmpty) {
+      AnalyticsService().trackAdClick(_adTargetUrl);
+      final uri = Uri.parse(_adTargetUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    }
   }
 
   @override
@@ -195,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.secondaryContainer,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
+                border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -305,7 +313,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 _loadUserData();
                               },
                             );
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),
@@ -316,15 +324,114 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // Share & Ad Banner
+          // Smart Ad Banner & Share Button
           SliverToBoxAdapter(
             child: Column(
               children: [
+                // Display Smart Banner Ad if active
+                if (_adActive && (_adBannerImage.isNotEmpty || _adTitle.isNotEmpty || _adCode.isNotEmpty))
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: InkWell(
+                      onTap: _adTargetUrl.isNotEmpty ? _handleAdClick : null,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
+                            begin: Alignment.topRight,
+                            end: Alignment.bottomLeft,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.amber.shade400, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Ad Tag
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.shade800,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Text(
+                                      'آگهی ویژه',
+                                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  if (_adTargetUrl.isNotEmpty)
+                                    Row(
+                                      children: [
+                                        Text('مشاهده و ورود', style: TextStyle(color: Colors.brown.shade700, fontSize: 12, fontWeight: FontWeight.bold)),
+                                        const SizedBox(width: 4),
+                                        Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.brown.shade700),
+                                      ],
+                                    ),
+                                ],
+                              ),
+                            ),
+
+                            // Banner Image if available
+                            if (_adBannerImage.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    _adBannerImage.startsWith('http') ? _adBannerImage : 'https://haftroz.ir/api/$_adBannerImage',
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (ctx, err, stack) => const SizedBox.shrink(),
+                                  ),
+                                ),
+                              ),
+
+                            // Ad Title / Code Text
+                            if (_adTitle.isNotEmpty || _adCode.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(14, 6, 14, 12),
+                                child: Text(
+                                  _adTitle.isNotEmpty ? _adTitle : _adCode,
+                                  style: TextStyle(
+                                    color: Colors.brown.shade900,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.4,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Share Button
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      Share.share('سلام! اپلیکیشن هفت روز رو دانلود کن و داستان‌های خودت رو ضبط کن: https://haftroz.ir/download.html');
+                      AnalyticsService().trackShare("App Share Button");
+                      SharePlus.instance.share(
+                        ShareParams(
+                          text: 'سلام! اپلیکیشن هفت روز رو دانلود کن و داستان‌های خودت رو ضبط کن: https://haftroz.ir/download.html',
+                        ),
+                      );
                     },
                     icon: const Icon(Icons.share_rounded),
                     label: const Text('ما را با دوستانتان به اشتراک بگذارید', style: TextStyle(fontFamily: 'Vazir', fontWeight: FontWeight.bold)),
@@ -336,25 +443,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                if (_adCode.isNotEmpty)
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[400]!),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      _adCode,
-                      style: const TextStyle(color: Colors.black87, fontFamily: 'Vazir', fontSize: 16),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                if (_adCode.isEmpty)
-                  const SizedBox(height: 24),
+                const SizedBox(height: 24),
               ],
             ),
           ),

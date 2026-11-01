@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
@@ -12,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:html_unescape/html_unescape.dart';
 
 import '../models/story.dart';
+import '../services/analytics_service.dart';
 
 class StoryScreen extends StatefulWidget {
   final Story story;
@@ -35,6 +35,9 @@ class _StoryScreenState extends State<StoryScreen> {
   @override
   void initState() {
     super.initState();
+    // Track story reading
+    AnalyticsService().trackStoryView(widget.story.id, widget.story.title);
+
     _audioPlayer.onPlayerStateChanged.listen((state) {
       if (mounted) {
         setState(() {
@@ -70,6 +73,8 @@ class _StoryScreenState extends State<StoryScreen> {
         const RecordConfig(encoder: AudioEncoder.aacLc),
         path: filePath,
       );
+
+      AnalyticsService().trackRecordStart(widget.story.id, widget.story.title);
 
       setState(() {
         _isRecording = true;
@@ -111,94 +116,63 @@ class _StoryScreenState extends State<StoryScreen> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final userName = prefs.getString('user_name') ?? 'کاربر ناشناس';
-      final userId = prefs.getInt('user_id');
+      final int? userId = prefs.getInt('user_id');
+
+      final String baseUrl = dotenv.env['API_BASE_URL'] ?? 'https://haftroz.ir/api/upload.php';
       
-      bool uploadSuccess = false;
-      String? errorMessage;
+      final httpClient = HttpClient()
+        ..badCertificateCallback = ((X509Certificate cert, String host, int port) => true);
+      final ioClient = IOClient(httpClient);
+
+      final request = http.MultipartRequest('POST', Uri.parse(baseUrl));
+      request.headers['Host'] = 'haftroz.ir';
+      request.fields['story_id'] = widget.story.id.replaceAll('s', '');
       
-      // Attempt 1: Standard domain
-      try {
-        final String apiUrl = dotenv.env['API_BASE_URL'] ?? 'https://haftroz.ir/api/upload.php';
-        var uri = Uri.parse(apiUrl);
-        var request = http.MultipartRequest('POST', uri)
-          ..fields['story_id'] = widget.story.id
-          ..fields['story_title'] = _unescape.convert(widget.story.title)
-          ..fields['device_id'] = userName;
-          
-        if (userId != null) {
-          request.fields['user_id'] = userId.toString();
-        }
-          
-        request.files.add(await http.MultipartFile.fromPath('audio', _recordedFilePath!));
-
-        var response = await request.send();
-        if (response.statusCode == 200) {
-          uploadSuccess = true;
-        } else {
-          errorMessage = 'خطای سرور: ${response.statusCode}';
-        }
-      } catch (e) {
-        debugPrint('First attempt failed: $e');
-        if (e is SocketException || e.toString().contains('SocketException') || e.toString().contains('Failed host lookup')) {
-          // Attempt 2: Direct IP Fallback (Bypass DNS cache)
-          debugPrint('Trying IP Fallback...');
-          final String fallbackUrl = 'https://91.107.153.4/api/upload.php';
-          var uri = Uri.parse(fallbackUrl);
-          var request = http.MultipartRequest('POST', uri)
-            ..headers['Host'] = 'haftroz.ir'
-            ..fields['story_id'] = widget.story.id
-            ..fields['story_title'] = _unescape.convert(widget.story.title)
-            ..fields['device_id'] = userName;
-            
-          if (userId != null) {
-            request.fields['user_id'] = userId.toString();
-          }
-          
-          request.files.add(await http.MultipartFile.fromPath('audio', _recordedFilePath!));
-
-          // Bypass SSL verification for fallback (since IP doesn't match cert)
-          final httpClient = HttpClient()
-            ..badCertificateCallback = ((X509Certificate cert, String host, int port) => true);
-          final ioClient = IOClient(httpClient);
-
-          var response = await ioClient.send(request);
-          if (response.statusCode == 200) {
-             uploadSuccess = true;
-          } else {
-             errorMessage = 'خطای سرور در تلاش دوم: ${response.statusCode}';
-          }
-        } else {
-          errorMessage = e.toString();
-        }
+      if (userId != null) {
+        request.fields['user_id'] = userId.toString();
       }
 
-      if (mounted) {
-        if (uploadSuccess) {
-            // Mark as recorded
-            await prefs.setBool('recorded_${widget.story.id}', true);
-            
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('صدای شما با موفقیت به سرور هفت روز ارسال شد!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            setState(() {
-              _recordedFilePath = null;
-            });
-            Navigator.of(context).pop();
-        } else {
-            throw Exception(errorMessage ?? 'خطای اتصال به اینترنت');
+      request.files.add(await http.MultipartFile.fromPath('audio', _recordedFilePath!));
+
+      http.StreamedResponse streamedResponse;
+      try {
+        streamedResponse = await ioClient.send(request);
+      } catch (e) {
+        // Fallback to IP if domain fails
+        final String fallbackUrl = 'https://91.107.153.4/api/upload.php';
+        final fallbackRequest = http.MultipartRequest('POST', Uri.parse(fallbackUrl));
+        fallbackRequest.headers['Host'] = 'haftroz.ir';
+        fallbackRequest.fields['story_id'] = widget.story.id.replaceAll('s', '');
+        if (userId != null) {
+          fallbackRequest.fields['user_id'] = userId.toString();
         }
+        fallbackRequest.files.add(await http.MultipartFile.fromPath('audio', _recordedFilePath!));
+        streamedResponse = await ioClient.send(fallbackRequest);
+      }
+
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('صدای شما با موفقیت ارسال شد و پس از بررسی منتشر خواهد شد.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Mark as recorded
+          await prefs.setBool('recorded_${widget.story.id}', true);
+          Navigator.of(context).pop();
+        }
+      } else {
+        throw Exception('خطای سرور: ${response.statusCode}');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('خطا در ارسال: ${e.toString()}'),
+            content: Text('خطا در ارسال صدا: $e'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -206,6 +180,7 @@ class _StoryScreenState extends State<StoryScreen> {
       if (mounted) {
         setState(() {
           _isUploading = false;
+          _recordedFilePath = null;
         });
       }
     }
@@ -213,15 +188,15 @@ class _StoryScreenState extends State<StoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    // Decode HTML entities so &quot; becomes "
-    final cleanTitle = _unescape.convert(widget.story.title);
-    final cleanContent = _unescape.convert(widget.story.content);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(cleanTitle),
+        title: Text(
+          _unescape.convert(widget.story.title),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: SafeArea(
         child: Column(
@@ -232,40 +207,59 @@ class _StoryScreenState extends State<StoryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (widget.story.imageUrl != null && widget.story.imageUrl!.isNotEmpty) ...[
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
+                    // Story Image
+                    if (widget.story.imageUrl != null && widget.story.imageUrl!.isNotEmpty)
+                      Container(
+                        height: 220,
+                        margin: const EdgeInsets.only(bottom: 24),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        clipBehavior: Clip.hardEdge,
                         child: Image.network(
                           'https://haftroz.ir/api/${widget.story.imageUrl}',
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Center(child: Icon(Icons.broken_image_rounded, size: 48, color: Colors.grey)),
                         ),
                       ),
-                      const SizedBox(height: 24),
-                    ],
+
+                    // Story Text
                     Text(
-                      cleanContent,
-                      style: const TextStyle(
+                      _unescape.convert(widget.story.content),
+                      style: theme.textTheme.bodyLarge?.copyWith(
                         fontSize: 18,
                         height: 2.0,
+                        letterSpacing: 0.2,
                         color: Colors.black87,
                       ),
                       textAlign: TextAlign.justify,
                     ),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
             ),
+
+            // Bottom Audio Studio Action Bar
             Container(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    offset: const Offset(0, -4),
-                    blurRadius: 16,
-                  )
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 15,
+                    offset: const Offset(0, -5),
+                  ),
                 ],
               ),
               child: Column(
