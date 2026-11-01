@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -17,7 +16,6 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
-  String? _errorMessage;
 
   @override
   void initState() {
@@ -36,10 +34,20 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _guestLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_name', 'کاربر میهمان');
+    await prefs.setBool('is_logged_in', true);
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (ctx) => const HomeScreen()),
+      );
+    }
+  }
+
   Future<void> _googleLogin() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     try {
@@ -100,15 +108,33 @@ class _LoginScreenState extends State<LoginScreen> {
           throw Exception(errorMessage ?? 'خطا در ارتباط با سرور هنگام ثبت‌نام');
         }
       } else {
+        // User cancelled or Google Play Services cancelled
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ورود با حساب گوگل انجام نشد. می‌توانید با دکمه «ورود به عنوان مهمان» ادامه دهید.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('پیام گوگل: $e\nمی‌توانید به راحتی با دکمه مهمان وارد شوید.'),
+            backgroundColor: Colors.deepOrange,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = e.toString();
-      });
     }
   }
 
@@ -152,22 +178,44 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 48),
                 if (_isLoading)
                   const Center(child: CircularProgressIndicator())
-                else
-                  OutlinedButton.icon(
-                    onPressed: _googleLogin,
-                    icon: const Icon(Icons.g_mobiledata_rounded, size: 32, color: Colors.brown),
+                else ...[
+                  // Guest Login (Direct access)
+                  ElevatedButton.icon(
+                    onPressed: _guestLogin,
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 24),
                     label: const Text(
-                      'ورود با حساب گوگل',
-                      style: TextStyle(fontSize: 16, color: Colors.brown, fontFamily: 'Vazir'),
+                      'ورود مستقیم به برنامه (مهمان)',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Vazir'),
                     ),
-                    style: OutlinedButton.styleFrom(
+                    style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: const BorderSide(color: Colors.brown),
+                      backgroundColor: Colors.brown[700],
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                   ),
+
+                  const SizedBox(height: 16),
+
+                  // Google Login
+                  OutlinedButton.icon(
+                    onPressed: _googleLogin,
+                    icon: const Icon(Icons.g_mobiledata_rounded, size: 32, color: Colors.brown),
+                    label: const Text(
+                      'ورود با حساب گوگل',
+                      style: TextStyle(fontSize: 15, color: Colors.brown, fontFamily: 'Vazir'),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: BorderSide(color: Colors.brown.shade300),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
