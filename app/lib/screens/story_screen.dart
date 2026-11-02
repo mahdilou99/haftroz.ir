@@ -70,7 +70,12 @@ class _StoryScreenState extends State<StoryScreen> {
       final filePath = '${directory.path}/recording_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
       await _audioRecorder.start(
-        const RecordConfig(encoder: AudioEncoder.aacLc),
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 64000,
+          sampleRate: 44100,
+          numChannels: 1,
+        ),
         path: filePath,
       );
 
@@ -162,7 +167,7 @@ class _StoryScreenState extends State<StoryScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('صدای شما با موفقیت ارسال شد و پس از بررسی منتشر خواهد شد.'),
+              content: Text('صدای شما با موفقیت ارسال شد و پس از بررسی و تایید مدیر منتشر خواهد شد.'),
               backgroundColor: Colors.green,
             ),
           );
@@ -170,6 +175,8 @@ class _StoryScreenState extends State<StoryScreen> {
           await prefs.setBool('recorded_${widget.story.id}', true);
           Navigator.of(context).pop();
         }
+      } else if (response.statusCode == 413) {
+        throw Exception('حجم فایل برای سرور زیاد است (خطای ۴۱۳). تنظیمات آپلود سرور را طبق دستورالعمل افزایش دهید.');
       } else {
         throw Exception('خطای سرور: ${response.statusCode}');
       }

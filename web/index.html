@@ -261,7 +261,7 @@
                         const date = new Date(rec.created_at).toLocaleDateString("fa-IR");
                         
                         card.innerHTML = `
-                            <h3>قصه شماره ${rec.story_id}</h3>
+                            <h3>${rec.story_title || ("قصه شماره " + rec.story_id)}</h3>
                             <p><strong>گوینده:</strong> ${rec.user_name || "کاربر مهمان"}</p>
                             <p><strong>تاریخ ثبت:</strong> ${date}</p>
                             <audio controls class="audio-player">

@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 }
 
-                $stmt = $pdo->prepare("INSERT INTO recordings (story_id, user_id, file_path) VALUES (?, ?, ?)");
+                $stmt = $pdo->prepare("INSERT INTO recordings (story_id, user_id, file_path, is_approved) VALUES (?, ?, ?, 0)");
                 $stmt->execute([$story_id, $user_id, 'uploads/' . $newFileName]);
                 $logger->info("Database insert successful", ['story_id' => $story_id, 'user_id' => $user_id]);
 
