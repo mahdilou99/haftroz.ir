@@ -7,14 +7,14 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1059933970142:android:34988c05e6453003f9ac4f",
+        "mobilesdk_app_id": "1:1059933970142:android:109f106bcf43154cf9ac4f",
         "android_client_info": {
           "package_name": "ir.haftroz"
         }
       },
       "oauth_client": [
         {
-          "client_id": "1059933970142-fl2upnhai1cgecj8v49r960pt67dej5e.apps.googleusercontent.com",
+          "client_id": "1059933970142-he50c7t5sf213ppvni65bob2ejccsq5c.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "ir.haftroz",
@@ -22,7 +22,7 @@
           }
         },
         {
-          "client_id": "1059933970142-jsmgbofr8pb041vv4isus0ochjuun154.apps.googleusercontent.com",
+          "client_id": "1059933970142-uhhfqvtfatnmuphj5336jj27r8hl62f4.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "ir.haftroz",
