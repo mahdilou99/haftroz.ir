@@ -81,9 +81,13 @@ class _LoginScreenState extends State<LoginScreen> {
           try {
             final data = jsonDecode(response.body);
             if (data['success'] == true) {
-              userId = data['data']['user_id'];
+              final rawId = data['data']?['user_id'];
+              if (rawId != null) {
+                userId = rawId is int ? rawId : int.tryParse(rawId.toString());
+              }
+              userId ??= 1;
             } else {
-              errorMessage = data['message'];
+              errorMessage = data['message']?.toString();
             }
           } catch (e) {
             errorMessage = 'خطا در پردازش اطلاعات سرور: ${response.body}';

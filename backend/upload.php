@@ -17,11 +17,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $story_id = (int)str_replace('s', '', $raw_story_id);
         
         $user_id = isset($_POST['user_id']) ? (int)$_POST['user_id'] : 0;
-        $story_title = isset($_POST['story_name']) ? $_POST['story_name'] : 'داستان_نامشخص';
-        
-        $safe_title = str_replace(' ', '_', $story_title);
-        $safe_title = preg_replace('/[\\\\\/:\*\?"<>\|]/', '', $safe_title);
-        $newFileName = $safe_title . '_' . $user_id . '_' . time() . '.m4a';
+        $story_title = isset($_POST['story_name']) ? trim($_POST['story_name']) : '';
+        $user_name = isset($_POST['user_name']) ? trim($_POST['user_name']) : '';
+
+        // Query database to fetch title and user details if missing or empty
+        try {
+            $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            if (empty($story_title) && $story_id > 0) {
+                $stmt = $pdo->prepare("SELECT title FROM stories WHERE id = ?");
+                $stmt->execute([$story_id]);
+                $storyRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($storyRow && !empty($storyRow['title'])) {
+                    $story_title = $storyRow['title'];
+                }
+            }
+
+            if (empty($user_name) && $user_id > 0) {
+                $stmt = $pdo->prepare("SELECT name FROM users WHERE id = ?");
+                $stmt->execute([$user_id]);
+                $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($userRow && !empty($userRow['name'])) {
+                    $user_name = $userRow['name'];
+                }
+            }
+        } catch (Exception $e) {
+            $logger->error("Database check error in upload.php", ['error' => $e->getMessage()]);
+        }
+
+        if (empty($story_title)) {
+            $story_title = ($story_id > 0) ? "داستان شماره $story_id" : "داستان نامشخص";
+        }
+        if (empty($user_name)) {
+            $user_name = ($user_id > 0) ? "کاربر شماره $user_id" : "کاربر مهمان";
+        }
+
+        $safe_title = preg_replace('/[\\\\\/:\*\?"<>\|]/', '', str_replace(' ', '_', $story_title));
+        $safe_user = preg_replace('/[\\\\\/:\*\?"<>\|]/', '', str_replace(' ', '_', $user_name));
+        $newFileName = $safe_title . '_' . $safe_user . '_' . time() . '.m4a';
 
         $uploadFileDir = __DIR__ . '/uploads/';
         if (!is_dir($uploadFileDir)) {
@@ -34,8 +68,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $logger->info("File successfully moved", ['target_path' => $dest_path]);
             
             try {
-                $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
-                $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                if (!isset($pdo)) {
+                    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass);
+                    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                }
 
                 $stmt = $pdo->prepare("INSERT INTO recordings (story_id, user_id, file_path) VALUES (?, ?, ?)");
                 $stmt->execute([$story_id, $user_id, 'uploads/' . $newFileName]);
@@ -46,9 +82,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $caption = "🎙 یک صدای جدید دریافت شد!\n\n" .
-                       "نام داستان: " . $story_title . "\n" .
-                       "شناسه داستان: " . $story_id . "\n" .
-                       "آیدی کاربر: " . $user_id;
+                       "📖 نام داستان: " . $story_title . "\n" .
+                       "🆔 شناسه داستان: " . $story_id . "\n" .
+                       "👤 نام راوی: " . $user_name . "\n" .
+                       "🔢 کد کاربر: " . ($user_id > 0 ? $user_id : 'مهمان') . "\n" .
+                       "⏰ زمان ارسال: " . date('Y-m-d H:i:s');
 
             $telegramUrl = "https://api.telegram.org/bot" . $botToken . "/sendAudio";
             $cFile = new CURLFile($dest_path, 'audio/mp4', $newFileName);
@@ -56,7 +94,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $postFields = array(
                 'chat_id' => $chatId,
                 'audio' => $cFile,
-                'caption' => $caption
+                'caption' => $caption,
+                'title' => $story_title,
+                'performer' => $user_name
             );
 
             $ch = curl_init();
@@ -90,3 +130,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
 }
+?>

@@ -7,7 +7,7 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // واکشی داستان‌ها بر اساس ترتیب تعیین شده در پنل مدیریت
-    $stmt = $pdo->query("SELECT id, category_name as categoryId, title, content_text as content FROM stories ORDER BY order_index ASC, id DESC");
+    $stmt = $pdo->query("SELECT id, category_name, category_name as categoryId, title, content_text, content_text as content FROM stories ORDER BY order_index ASC, id DESC");
     $stories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // تبدیل IDها به رشته (برای سازگاری با مدل فلاتر)

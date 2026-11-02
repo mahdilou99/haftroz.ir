@@ -49,7 +49,7 @@ try {
     echo json_encode([
         'success' => true,
         'data' => [
-            'user_id' => $user_id,
+            'user_id' => (int)$user_id,
             'name' => $name,
             'email' => $email
         ]

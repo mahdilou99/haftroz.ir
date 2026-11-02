@@ -201,7 +201,7 @@ try {
     // ======================================
     // خواندن اطلاعات برای نمایش در تب‌ها
     // ======================================
-    $recordings = $pdo->query("SELECT r.*, u.name as user_name FROM recordings r LEFT JOIN users u ON r.user_id = u.id ORDER BY r.id DESC LIMIT 100")->fetchAll(PDO::FETCH_ASSOC);
+    $recordings = $pdo->query("SELECT r.*, u.name as user_name, s.title as story_title FROM recordings r LEFT JOIN users u ON r.user_id = u.id LEFT JOIN stories s ON r.story_id = s.id ORDER BY r.id DESC LIMIT 100")->fetchAll(PDO::FETCH_ASSOC);
 
     $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM settings");
     $settings = $settingsStmt->fetchAll(PDO::FETCH_KEY_PAIR);
@@ -401,11 +401,11 @@ $activeTab = $_GET['tab'] ?? 'analytics';
     <div id="recordings" class="tab-content <?php echo $activeTab == 'recordings' ? 'active' : ''; ?>">
         <h2 style="color:gold; margin-top:0;">🎙️ صداهای ضبط شده توسط کاربران</h2>
         <table>
-            <tr><th>ID</th><th>شناسه قصه</th><th>کاربر</th><th>وضعیت</th><th>تاریخ</th><th>عملیات</th></tr>
+            <tr><th>ID</th><th>نام داستان / قصه</th><th>کاربر</th><th>وضعیت</th><th>تاریخ</th><th>عملیات</th></tr>
             <?php foreach($recordings as $r): ?>
             <tr>
                 <td><?php echo $r['id']; ?></td>
-                <td><?php echo $r['story_id']; ?></td>
+                <td><strong style="color:gold;"><?php echo htmlspecialchars($r['story_title'] ?? ('قصه #' . $r['story_id'])); ?></strong></td>
                 <td><?php echo htmlspecialchars($r['user_name'] ?? 'مهمان'); ?></td>
                 <td style="color: <?php echo $r['is_approved'] ? '#27ae60' : '#f39c12'; ?>;">
                     <?php echo $r['is_approved'] ? 'تایید شده ✔' : 'در انتظار ⏳'; ?>

@@ -127,6 +127,10 @@ class _StoryScreenState extends State<StoryScreen> {
       final request = http.MultipartRequest('POST', Uri.parse(baseUrl));
       request.headers['Host'] = 'haftroz.ir';
       request.fields['story_id'] = widget.story.id.replaceAll('s', '');
+      request.fields['story_name'] = widget.story.title;
+      
+      final String userName = prefs.getString('user_name') ?? 'کاربر مهمان';
+      request.fields['user_name'] = userName;
       
       if (userId != null) {
         request.fields['user_id'] = userId.toString();
@@ -143,6 +147,8 @@ class _StoryScreenState extends State<StoryScreen> {
         final fallbackRequest = http.MultipartRequest('POST', Uri.parse(fallbackUrl));
         fallbackRequest.headers['Host'] = 'haftroz.ir';
         fallbackRequest.fields['story_id'] = widget.story.id.replaceAll('s', '');
+        fallbackRequest.fields['story_name'] = widget.story.title;
+        fallbackRequest.fields['user_name'] = userName;
         if (userId != null) {
           fallbackRequest.fields['user_id'] = userId.toString();
         }

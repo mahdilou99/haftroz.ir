@@ -16,10 +16,10 @@ class Story {
   factory Story.fromJson(Map<String, dynamic> json) {
     return Story(
       id: json['id'].toString(),
-      title: json['title'] ?? '',
-      categoryId: json['category_name'] ?? 'c1',
-      content: json['content_text'] ?? '',
-      imageUrl: json['image_url'],
+      title: (json['title'] ?? '').toString(),
+      categoryId: (json['categoryId'] ?? json['category_name'] ?? 'c1').toString(),
+      content: (json['content'] ?? json['content_text'] ?? '').toString(),
+      imageUrl: json['image_url']?.toString(),
     );
   }
 }
